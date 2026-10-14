@@ -739,6 +739,26 @@ export default function LogsPage() {
               </span>
             </div>
 
+            <a
+              href="/tester"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "7px 16px",
+                borderRadius: "8px",
+                border: "1.5px solid #00AA13",
+                background: "#00AA13",
+                color: "#fff",
+                fontSize: "13px",
+                fontWeight: 600,
+                textDecoration: "none",
+                cursor: "pointer",
+              }}
+            >
+              API Tester &rarr;
+            </a>
+
             <button
               onClick={fetchLogs}
               style={{
