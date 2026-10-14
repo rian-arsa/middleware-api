@@ -18,10 +18,10 @@ interface LogEntry {
 }
 
 const METHOD_COLOR: Record<string, { bg: string; text: string }> = {
-  GET:    { bg: "#e8f4fd", text: "#1a6fa8" },
-  POST:   { bg: "#e6f9ec", text: "#177a37" },
-  PUT:    { bg: "#fff4e5", text: "#b35c00" },
-  PATCH:  { bg: "#f3eeff", text: "#6931c7" },
+  GET: { bg: "#e8f4fd", text: "#1a6fa8" },
+  POST: { bg: "#e6f9ec", text: "#177a37" },
+  PUT: { bg: "#fff4e5", text: "#b35c00" },
+  PATCH: { bg: "#f3eeff", text: "#6931c7" },
   DELETE: { bg: "#fdecea", text: "#b91c1c" },
 };
 
@@ -657,7 +657,7 @@ export default function LogsPage() {
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
       `}</style>
 
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
         {/* Top bar */}
         <header
@@ -826,8 +826,11 @@ export default function LogsPage() {
           {/* Table */}
           <div
             style={{
-              flex: selected ? "0 0 58%" : "1",
+              flex: selected ? (panelWide ? "0 0 35%" : "0 0 58%") : "1 1 auto",
+              minWidth: 0,
+              transition: "flex 0.2s ease-in-out",
               overflowY: "auto",
+              overflowX: "auto",
               borderRight: selected ? "1px solid #e5e7eb" : "none",
             }}
           >
@@ -983,8 +986,11 @@ export default function LogsPage() {
             <div
               style={{
                 flex: panelWide ? "0 0 65%" : "0 0 42%",
+                minWidth: 0,
+                maxWidth: panelWide ? "65%" : "42%",
                 transition: "flex 0.2s ease-in-out",
                 overflowY: "auto",
+                overflowX: "hidden",
                 background: "#fff",
                 padding: "24px 28px",
               }}
