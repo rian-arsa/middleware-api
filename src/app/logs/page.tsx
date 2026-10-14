@@ -113,6 +113,40 @@ function highlightJson(json: string): string {
     );
 }
 
+/** Menghasilkan perintah cURL yang siap dijalankan dari LogEntry */
+function generateCurl(log: LogEntry): string {
+  const lines: string[] = [`curl -X ${log.method} '${log.url}'`];
+
+  const skipHeaders = new Set([
+    "host",
+    "connection",
+    "content-length",
+    "accept-encoding",
+    "sec-fetch-mode",
+    "sec-fetch-site",
+    "sec-fetch-dest",
+    "sec-ch-ua",
+    "sec-ch-ua-mobile",
+    "sec-ch-ua-platform",
+    "upgrade-insecure-requests",
+  ]);
+
+  if (log.requestHeaders) {
+    for (const [key, value] of Object.entries(log.requestHeaders)) {
+      if (skipHeaders.has(key.toLowerCase())) continue;
+      const escapedVal = String(value).replace(/'/g, `'\\''`);
+      lines.push(`  -H '${key}: ${escapedVal}'`);
+    }
+  }
+
+  if (log.requestBody && log.method !== "GET" && log.method !== "HEAD") {
+    const escapedBody = log.requestBody.replace(/'/g, `'\\''`);
+    lines.push(`  --data-raw '${escapedBody}'`);
+  }
+
+  return lines.join(" \\\n");
+}
+
 function CodeBlock({
   value,
   label,
@@ -547,6 +581,19 @@ export default function LogsPage() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [clearing, setClearing] = useState(false);
   const [panelWide, setPanelWide] = useState(false);
+  const [curlCopied, setCurlCopied] = useState(false);
+
+  const handleCopyCurl = async () => {
+    if (!selected) return;
+    try {
+      const curl = generateCurl(selected);
+      await navigator.clipboard.writeText(curl);
+      setCurlCopied(true);
+      setTimeout(() => setCurlCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -974,6 +1021,28 @@ export default function LogsPage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <button
+                    onClick={handleCopyCurl}
+                    title="Salin request ini sebagai perintah cURL"
+                    style={{
+                      padding: "4px 12px",
+                      borderRadius: "6px",
+                      border: "1px solid",
+                      borderColor: curlCopied ? "#00AA13" : "#00AA13",
+                      background: curlCopied ? "#e6f9ec" : "#00AA13",
+                      color: curlCopied ? "#00AA13" : "#fff",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      fontFamily: "'Inter', sans-serif",
+                      transition: "all 0.15s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    {curlCopied ? "✓ cURL Tersalin" : "Salin cURL"}
+                  </button>
+                  <button
                     onClick={() => setPanelWide((prev) => !prev)}
                     title={panelWide ? "Perkecil panel (42%)" : "Perlebar panel (65%)"}
                     style={{
@@ -1014,17 +1083,38 @@ export default function LogsPage() {
               </Section>
 
               <Section title="URL">
-                <p
-                  style={{
-                    fontSize: "12px",
-                    color: "#374151",
-                    fontFamily: "monospace",
-                    wordBreak: "break-all",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {selected.url}
-                </p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      color: "#374151",
+                      fontFamily: "monospace",
+                      wordBreak: "break-all",
+                      lineHeight: 1.6,
+                      flex: 1,
+                    }}
+                  >
+                    {selected.url}
+                  </p>
+                  <button
+                    onClick={handleCopyCurl}
+                    title="Salin sebagai perintah cURL"
+                    style={{
+                      flexShrink: 0,
+                      padding: "3px 8px",
+                      borderRadius: "4px",
+                      border: "1px solid #e5e7eb",
+                      background: "#fff",
+                      fontSize: "11px",
+                      fontWeight: 500,
+                      color: curlCopied ? "#00AA13" : "#4b5563",
+                      cursor: "pointer",
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    {curlCopied ? "✓ Tersalin" : "Salin cURL"}
+                  </button>
+                </div>
               </Section>
 
               {Object.keys(selected.queryParams).length > 0 && (
