@@ -136,6 +136,7 @@ Aplikasi akan berjalan di:
 - **Dashboard Logs**: [http://localhost:4000/logs](http://localhost:4000/logs)
 - **Mock Manager**: [http://localhost:4000/mocks](http://localhost:4000/mocks)
 - **API Tester**: [http://localhost:4000/tester](http://localhost:4000/tester)
+- **Dokumentasi Lengkap**: [http://localhost:4000/docs](http://localhost:4000/docs)
 
 ---
 
@@ -149,6 +150,7 @@ middleware-api/
 │   │   ├── api/
 │   │   │   ├── logs/                # API REST internal untuk data log (GET, DELETE)
 │   │   │   └── mocks/               # API CRUD internal mock ([id]/route.ts)
+│   │   ├── docs/                    # Halaman UI Dokumentasi Resmi & Panduan
 │   │   ├── logs/                    # Halaman UI Live Logs & Inspector
 │   │   ├── mocks/                   # Halaman UI Mock API Manager
 │   │   ├── tester/                  # Halaman UI API Tester & cURL importer

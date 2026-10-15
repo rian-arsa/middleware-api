@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 
-export type NavTab = "logs" | "mocks" | "tester";
+export type NavTab = "logs" | "mocks" | "tester" | "docs";
 
 interface HeaderProps {
   currentTab: NavTab;
@@ -244,6 +244,51 @@ export default function Header({ currentTab, subtitle, rightSlot }: HeaderProps)
             </svg>
             <span>API Tester</span>
             {currentTab === "tester" && (
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: GOJEK_GREEN,
+                  display: "inline-block",
+                }}
+              />
+            )}
+          </Link>
+
+          {/* Tab 4: Docs */}
+          <Link
+            href="/docs"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "7px 16px",
+              borderRadius: "9px",
+              textDecoration: "none",
+              fontSize: "13px",
+              fontWeight: currentTab === "docs" ? 700 : 500,
+              color: currentTab === "docs" ? "#0f172a" : "#64748b",
+              background: currentTab === "docs" ? "#ffffff" : "transparent",
+              boxShadow: currentTab === "docs" ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)" : "none",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={currentTab === "docs" ? GOJEK_GREEN : "currentColor"}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <span>Docs</span>
+            {currentTab === "docs" && (
               <span
                 style={{
                   width: 6,
