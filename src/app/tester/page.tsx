@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import Header from "@/components/Header";
 
 // --- Interfaces & Types ---
 
@@ -521,7 +522,7 @@ function buildUrlWithParams(
 ): string {
   if (!baseUrl) return "";
   try {
-    const dummyBase = "http://localhost:3000";
+    const dummyBase = "http://localhost:4000";
     const isRelative = !baseUrl.startsWith("http://") && !baseUrl.startsWith("https://");
     const u = new URL(baseUrl, dummyBase);
 
@@ -1360,52 +1361,17 @@ export default function TesterPage() {
         }}
       >
         {/* Top Header */}
-        <header
-          style={{
-            background: "#fff",
-            borderBottom: "1px solid #e5e7eb",
-            padding: "0 32px",
-            height: 60,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexShrink: 0,
-            zIndex: 20,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <div
-              style={{
-                width: 4,
-                height: 28,
-                borderRadius: 2,
-                background: GOJEK_GREEN,
-              }}
-            />
-            <div>
-              <p
-                style={{
-                  fontSize: "15px",
-                  fontWeight: 700,
-                  color: "#111827",
-                  lineHeight: 1.2,
-                }}
-              >
-                API Tester
-              </p>
-              <p style={{ fontSize: "11px", color: "#9ca3af", fontWeight: 500 }}>
-                Test and debug backend APIs via proxy middleware
-              </p>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <Header
+          currentTab="tester"
+          subtitle="HTTP Client & Debugger via Proxy Middleware"
+          rightSlot={
             <button
               type="button"
               onClick={() => setImportCurlModalOpen(true)}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
+                gap: "6px",
                 padding: "7px 14px",
                 borderRadius: "8px",
                 border: "1.5px solid #d1d5db",
@@ -1417,30 +1383,14 @@ export default function TesterPage() {
                 transition: "all 0.15s ease",
               }}
             >
-              Paste cURL
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+              </svg>
+              <span>Paste cURL</span>
             </button>
-
-            <a
-              href="/logs"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "7px 16px",
-                borderRadius: "8px",
-                border: "1.5px solid #e5e7eb",
-                background: "#fff",
-                color: "#374151",
-                fontSize: "13px",
-                fontWeight: 600,
-                textDecoration: "none",
-                cursor: "pointer",
-                transition: "all 0.15s ease",
-              }}
-            >
-              Logs
-            </a>
-          </div>
-        </header>
+          }
+        />
 
         {/* 2-Panel Content Area */}
         <div

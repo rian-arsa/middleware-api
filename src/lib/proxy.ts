@@ -1,5 +1,6 @@
 import { addLog, LogEntry } from "./logStore";
 import { CORS_HEADERS } from "./cors";
+import { findActiveMock } from "./mockStore";
 
 /**
  * Mengubah nama service dari URL ke nama env variable.
@@ -64,7 +65,6 @@ export async function proxyAndLog(
   query: string,
   req: Request
 ): Promise<Response> {
-  const targetUrl = resolveTargetUrl(service, path, query);
   const start = Date.now();
 
   // ── 1. Baca request body sebagai buffer ───────────────────────────────────
@@ -97,10 +97,57 @@ export async function proxyAndLog(
     queryParams[key] = value;
   });
 
+  // ── 1b. Cek mock aktif ────────────────────────────────────────────────────
+  const activeMock = findActiveMock(req.method, service, path);
+  if (activeMock) {
+    if (activeMock.delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, activeMock.delayMs));
+    }
+    const duration = Date.now() - start;
+    addLog({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      service,
+      url: `[MOCK] ${path}`,
+      queryParams,
+      requestHeaders,
+      requestBody,
+      status: activeMock.responseStatus,
+      responseHeaders: activeMock.responseHeaders,
+      responseBody: activeMock.responseBody,
+      duration,
+      mockedBy: activeMock.id,
+    });
+    // Normalisasi key mock response headers ke lowercase sebelum merge,
+    // agar CORS_HEADERS benar-benar meng-override header yang sama.
+    // Tanpa normalisasi, plain object spread menghasilkan dua header berbeda
+    // karena casing key berbeda (misal: "access-control-allow-credentials" dari
+    // mock vs "Access-Control-Allow-Credentials" dari CORS_HEADERS), yang
+    // menyebabkan browser reject response karena kombinasi credentials:true + origin:*.
+    const normalizedMockHeaders: Record<string, string> = {};
+    for (const [k, v] of Object.entries(activeMock.responseHeaders)) {
+      normalizedMockHeaders[k.toLowerCase()] = v;
+    }
+    const corsHeadersLower: Record<string, string> = {};
+    for (const [k, v] of Object.entries(CORS_HEADERS)) {
+      corsHeadersLower[k.toLowerCase()] = v;
+    }
+    return new Response(activeMock.responseBody, {
+      status: activeMock.responseStatus,
+      headers: {
+        ...normalizedMockHeaders,
+        ...corsHeadersLower,
+      },
+    });
+  }
+
+  const targetUrl = resolveTargetUrl(service, path, query);
+
   // ── 2. Forward ke BE ──────────────────────────────────────────────────────
   let status = 500;
   let responseBody: string | null = null;
-  let responseHeaders: Record<string, string> = {};
+  const responseHeaders: Record<string, string> = {};
   let resBuffer: ArrayBuffer = new ArrayBuffer(0);
   let resStatus = 500;
   let resStatusText = "";
