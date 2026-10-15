@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Header from "@/components/Header";
 
 interface LogEntry {
   id: string;
@@ -15,6 +16,7 @@ interface LogEntry {
   responseHeaders: Record<string, string>;
   responseBody: string | null;
   duration: number;
+  mockedBy?: string;
 }
 
 const METHOD_COLOR: Record<string, { bg: string; text: string }> = {
@@ -582,6 +584,63 @@ export default function LogsPage() {
   const [clearing, setClearing] = useState(false);
   const [panelWide, setPanelWide] = useState(false);
   const [curlCopied, setCurlCopied] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleSaveAsMock = async (log: LogEntry) => {
+    if (log.mockedBy) {
+      showToast("Log ini sudah dari mock, tidak bisa disimpan ulang.", "error");
+      return;
+    }
+
+    let cleanPath = log.url;
+    try {
+      cleanPath = new URL(log.url).pathname;
+    } catch {
+      if (log.url.startsWith("[MOCK]")) {
+        showToast("Log ini sudah dari mock, tidak bisa disimpan ulang.", "error");
+        return;
+      }
+    }
+
+    if (log.url.startsWith("[MOCK]")) {
+      showToast("Log ini sudah dari mock, tidak bisa disimpan ulang.", "error");
+      return;
+    }
+
+    const normPath = cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`;
+    const name = `${log.method} ${normPath} - dari log ${log.id.slice(0, 8)}`;
+    const payload = {
+      name,
+      method: log.method,
+      service: log.service,
+      path: normPath,
+      responseStatus: log.status,
+      responseHeaders: log.responseHeaders || {},
+      responseBody: log.responseBody ?? "",
+      delayMs: 0,
+      enabled: true,
+    };
+
+    try {
+      const res = await fetch("/api/mocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menyimpan mock");
+      }
+      showToast("Mock berhasil disimpan!");
+    } catch (err: any) {
+      showToast(err.message || "Gagal menyimpan mock", "error");
+    }
+  };
 
   const handleCopyCurl = async () => {
     if (!selected) return;
@@ -659,141 +718,92 @@ export default function LogsPage() {
 
       <div style={{ height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-        {/* Top bar */}
-        <header
-          style={{
-            background: "#fff",
-            borderBottom: "1px solid #e5e7eb",
-            padding: "0 32px",
-            height: 60,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            position: "sticky",
-            top: 0,
-            zIndex: 20,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            {/* Gojek-style logo strip */}
-            <div
-              style={{
-                width: 4,
-                height: 28,
-                borderRadius: 2,
-                background: GOJEK_GREEN,
-              }}
-            />
-            <div>
-              <p
+        {/* Top Header */}
+        <Header
+          currentTab="logs"
+          subtitle={
+            lastUpdate
+              ? `Real-time Traffic • Update ${lastUpdate.toLocaleTimeString("id-ID")}`
+              : "Menghubungkan ke Gateway..."
+          }
+          rightSlot={
+            <>
+              {/* Live indicator toggle */}
+              <div
                 style={{
-                  fontSize: "15px",
-                  fontWeight: 700,
-                  color: "#111827",
-                  lineHeight: 1.2,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #e2e8f0",
+                  background: polling ? "#f0fdf4" : "#f8fafc",
+                  cursor: "pointer",
                 }}
+                onClick={() => setPolling((p) => !p)}
+                title={polling ? "Klik untuk pause live polling" : "Klik untuk resume live polling"}
               >
-                Middleware Logger
-              </p>
-              <p style={{ fontSize: "11px", color: "#9ca3af", fontWeight: 500 }}>
-                {lastUpdate
-                  ? `Terakhir diperbarui pukul ${lastUpdate.toLocaleTimeString("id-ID")}`
-                  : "Menghubungkan..."}
-              </p>
-            </div>
-          </div>
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    background: polling ? GOJEK_GREEN : "#94a3b8",
+                    display: "inline-block",
+                    animation: polling ? "blink 1.5s infinite" : "none",
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: polling ? "#15803d" : "#64748b",
+                  }}
+                >
+                  {polling ? "Live" : "Paused"}
+                </span>
+              </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            {/* Live indicator */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 14px",
-                borderRadius: "8px",
-                border: "1.5px solid #e5e7eb",
-                background: "#fff",
-                cursor: "pointer",
-              }}
-              onClick={() => setPolling((p) => !p)}
-            >
-              <span
+              {/* Refresh button */}
+              <button
+                type="button"
+                onClick={fetchLogs}
                 style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: polling ? GOJEK_GREEN : "#d1d5db",
-                  display: "inline-block",
-                  animation: polling ? "blink 1.5s infinite" : "none",
-                }}
-              />
-              <span
-                style={{
-                  fontSize: "13px",
+                  padding: "7px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #e2e8f0",
+                  background: "#fff",
+                  color: "#475569",
+                  fontSize: "12px",
                   fontWeight: 600,
-                  color: polling ? "#111827" : "#9ca3af",
+                  cursor: "pointer",
                 }}
               >
-                {polling ? "Live" : "Paused"}
-              </span>
-            </div>
+                Refresh
+              </button>
 
-            <a
-              href="/tester"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "7px 16px",
-                borderRadius: "8px",
-                border: "1.5px solid #00AA13",
-                background: "#00AA13",
-                color: "#fff",
-                fontSize: "13px",
-                fontWeight: 600,
-                textDecoration: "none",
-                cursor: "pointer",
-              }}
-            >
-              API Tester &rarr;
-            </a>
-
-            <button
-              onClick={fetchLogs}
-              style={{
-                padding: "7px 16px",
-                borderRadius: "8px",
-                border: "1.5px solid #e5e7eb",
-                background: "#fff",
-                color: "#374151",
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Refresh
-            </button>
-
-            <button
-              onClick={handleClear}
-              disabled={clearing || logs.length === 0}
-              style={{
-                padding: "7px 16px",
-                borderRadius: "8px",
-                border: "1.5px solid #fca5a5",
-                background: "#fff",
-                color: "#ef4444",
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: logs.length === 0 ? "not-allowed" : "pointer",
-                opacity: logs.length === 0 ? 0.4 : 1,
-              }}
-            >
-              Hapus Log
-            </button>
-          </div>
-        </header>
+              {/* Clear button */}
+              <button
+                type="button"
+                onClick={handleClear}
+                disabled={clearing || logs.length === 0}
+                style={{
+                  padding: "7px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #fecaca",
+                  background: "#fff",
+                  color: "#ef4444",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: logs.length === 0 ? "not-allowed" : "pointer",
+                  opacity: logs.length === 0 ? 0.4 : 1,
+                }}
+              >
+                Hapus Log
+              </button>
+            </>
+          }
+        />
 
         {/* Filter bar */}
         <div
@@ -879,7 +889,7 @@ export default function LogsPage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    {["Waktu", "Method", "Service", "Path", "Status", "Durasi"].map((col) => (
+                    {["Waktu", "Method", "Service", "Path", "Status", "Durasi", "Aksi"].map((col) => (
                       <th
                         key={col}
                         style={{
@@ -931,10 +941,29 @@ export default function LogsPage() {
                             borderBottom: "1px solid #f3f4f6",
                           }}
                         >
-                          <Pill
-                            label={log.method}
-                            style={METHOD_COLOR[log.method] ?? { bg: "#f1f5f9", text: "#374151" }}
-                          />
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <Pill
+                              label={log.method}
+                              style={METHOD_COLOR[log.method] ?? { bg: "#f1f5f9", text: "#374151" }}
+                            />
+                            {log.mockedBy && (
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "2px 8px",
+                                  borderRadius: "100px",
+                                  fontSize: "10px",
+                                  fontWeight: 700,
+                                  letterSpacing: "0.04em",
+                                  background: "#fef3c7",
+                                  color: "#b45309",
+                                  fontFamily: "'Inter', sans-serif",
+                                }}
+                              >
+                                MOCK
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td
                           style={{
@@ -993,6 +1022,36 @@ export default function LogsPage() {
                         >
                           {log.duration} ms
                         </td>
+                        <td
+                          style={{
+                            padding: "12px 16px",
+                            borderBottom: "1px solid #f3f4f6",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {!log.mockedBy && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSaveAsMock(log);
+                              }}
+                              title="Simpan response ini sebagai Mock API"
+                              style={{
+                                padding: "4px 10px",
+                                borderRadius: "6px",
+                                border: "1px solid #d1d5db",
+                                background: "#fff",
+                                color: "#1e293b",
+                                fontSize: "11px",
+                                fontWeight: 500,
+                                cursor: "pointer",
+                              }}
+                            >
+                              Save as mock
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -1031,6 +1090,23 @@ export default function LogsPage() {
                     label={selected.method}
                     style={METHOD_COLOR[selected.method] ?? { bg: "#f1f5f9", text: "#374151" }}
                   />
+                  {selected.mockedBy && (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "2px 8px",
+                        borderRadius: "100px",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        letterSpacing: "0.04em",
+                        background: "#fef3c7",
+                        color: "#b45309",
+                        fontFamily: "'Inter', sans-serif",
+                      }}
+                    >
+                      MOCK
+                    </span>
+                  )}
                   <Pill
                     label={String(selected.status)}
                     style={getStatusStyle(selected.status)}
@@ -1046,6 +1122,25 @@ export default function LogsPage() {
                   </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  {!selected.mockedBy && (
+                    <button
+                      onClick={() => handleSaveAsMock(selected)}
+                      title="Simpan response ini sebagai Mock API"
+                      style={{
+                        padding: "4px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #d1d5db",
+                        background: "#fff",
+                        color: "#374151",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontFamily: "'Inter', sans-serif",
+                      }}
+                    >
+                      Save as mock
+                    </button>
+                  )}
                   <button
                     onClick={handleCopyCurl}
                     title="Salin request ini sebagai perintah cURL"
@@ -1187,6 +1282,25 @@ export default function LogsPage() {
             </div>
           )}
         </div>
+        {toast && (
+          <div
+            style={{
+              position: "fixed",
+              bottom: "24px",
+              right: "24px",
+              padding: "10px 18px",
+              borderRadius: "8px",
+              background: toast.type === "error" ? "#dc2626" : "#0f172a",
+              color: "#fff",
+              fontSize: "13px",
+              fontWeight: 500,
+              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+              zIndex: 200,
+            }}
+          >
+            {toast.message}
+          </div>
+        )}
       </div>
     </>
   );

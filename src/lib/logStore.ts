@@ -11,6 +11,7 @@ export interface LogEntry {
   responseHeaders: Record<string, string>;
   responseBody: string | null;
   duration: number;
+  mockedBy?: string;
 }
 
 const MAX_LOGS = 500;

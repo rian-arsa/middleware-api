@@ -8,7 +8,7 @@ type Params = Promise<{
 }>;
 
 // Nama service yang dilarang karena bentrok dengan route internal
-const RESERVED = ["logs", "api"];
+const RESERVED = ["logs", "api", "mocks", "tester"];
 
 async function handler(
   req: NextRequest,

@@ -1,123 +1,174 @@
-# Penjelasan untuk README
+# Middleware Studio — Dev API Gateway, Logger & Mock Manager
 
-## Latar belakang
-
-Di aplikasi Next.js, request ke BE datang dari dua sumber:
-
-- **SSR**: request keluar dari server Next.js, sehingga lognya ada di terminal/server log.
-- **CSR**: request keluar dari browser, sehingga lognya ada di tab Network.
-
-Kedua log ini terpisah, sehingga sulit dilacak sebagai satu alur.
-
-## Solusi
-
-Project ini adalah **proxy/middleware** berbasis Next.js. FE tidak lagi memanggil BE langsung, tetapi lewat project ini. Middleware meneruskan request ke BE, mencatat request dan response-nya, lalu menampilkannya di satu halaman log.
-
-```
-FE (SSR & CSR) ──► Middleware ──► BE
-                       │
-                       ├─ mencatat log request & response
-                       └─ halaman /logs untuk melihat log
-```
-
-## Cara kerja
-
-1. FE memanggil middleware dengan format `<alamat-middleware>/<nama-service>/<path>`.
-2. Middleware membaca segmen pertama (`nama-service`) untuk menentukan BE tujuan.
-3. Middleware menyambung base URL BE dengan sisa path dan query string, lalu meneruskan request.
-4. Response BE dikembalikan ke FE apa adanya.
-5. Request dan response dicatat dan bisa dilihat di halaman `/logs`.
-
-Contoh:
-
-```
-FE memanggil : http://localhost:4000/service-a/api/users?page=1
-Middleware   : service-a → https://api.service-a.com
-Diteruskan   : https://api.service-a.com/api/users?page=1
-```
-
-## Konfigurasi
-
-### Middleware
-
-Setiap service didaftarkan lewat env dengan format `<NAMA_SERVICE>_URL`.
-
-```env
-SERVICE_A_URL=https://api.service-a.com
-SERVICE_B_URL=https://api.service-b.com
-```
-
-Aturan penamaan: nama service di URL diubah menjadi huruf besar, tanda `-` menjadi `_`, lalu ditambah akhiran `_URL`.
-
-| Path dari FE | Env yang dipakai |
-|---|---|
-| `/service-a/...` | `SERVICE_A_URL` |
-| `/service-b/...` | `SERVICE_B_URL` |
-| `/auth-user/...` | `AUTH_USER_URL` |
-
-Menambah service baru cukup menambah satu baris env, tanpa mengubah kode.
-
-### FE
-
-FE hanya perlu alamat middleware dan nama service, tanpa mengetahui URL asli BE.
-
-```env
-API_URL=http://localhost:4000/service-a
-```
-
-Pemakaiannya tetap seperti biasa:
-
-```ts
-fetch(`${process.env.API_URL}/api/users`)
-```
-
-## Fitur
-
-- Proxy untuk method GET, POST, PUT, PATCH, dan DELETE.
-- Mapping ke banyak BE berdasarkan nama service.
-- Pencatatan log: waktu, method, URL, query, header, body, status, dan durasi.
-- Halaman `/logs` berisi tabel log, detail request/response, filter, dan tombol clear.
-- Pembaruan log otomatis lewat polling.
-
-## Struktur project
-
-```
-middleware-logger/
-├─ app/
-│  ├─ [service]/[...path]/route.ts   # proxy + logging
-│  ├─ _logs/route.ts                 # data log (JSON)
-│  └─ logs/page.tsx                  # halaman viewer
-├─ lib/
-│  ├─ logStore.ts                    # penyimpanan log
-│  └─ proxy.ts                       # logika forward ke BE
-└─ .env                              # daftar URL service
-```
-
-## Batasan saat ini
-
-- **Hanya untuk project pribadi**: tidak ada autentikasi dan tidak ada masking data sensitif. Jangan dipakai di production.
-- **Log disimpan di memori**: log hilang saat server restart, dan jumlahnya dibatasi (misalnya 500 log terakhir).
-- **Tidak cocok untuk serverless** seperti Vercel, karena memori tidak dibagi antar instance. Jalankan secara lokal atau di server biasa.
-- **SSR dan CSR belum dibedakan**: semua request dicatat sebagai satu jenis.
-- **Nama service `logs` tidak boleh dipakai**, karena bentrok dengan halaman viewer.
-- **Body non-teks** (file, gambar) tidak dicatat isinya, hanya ukuran dan content-type.
-
-## Rencana pengembangan
-
-- Membedakan SSR dan CSR lewat header `x-request-source`.
-- Menyimpan log ke file atau SQLite agar tidak hilang saat restart.
-- Tombol "copy as cURL" di halaman log.
-
-## Menjalankan project
-
-```bash
-npm install
-cp .env.example .env     # isi URL tiap service
-npm run dev -- -p 4000
-```
-
-Lalu buka `http://localhost:4000/logs` untuk melihat log.
+**Middleware Studio** adalah *developer workspace & API proxy gateway* lokal berbasis **Next.js 16 (Turbopack)**. Aplikasi ini dirancang untuk mengatasi kendala pengembangan Frontend (FE) dan Backend (BE), seperti masalah CORS, pemantauan trafik HTTP real-time dari SSR/CSR, simulasi respon API (*mocking*), serta pengujian API interaktif (*built-in API tester*).
 
 ---
 
-Bagian "Menjalankan project" saya tulis berdasarkan rencana, jadi sesuaikan setelah kodenya jadi. Kalau mau, saya bisa langsung membuat file `README.md`-nya dari penjelasan ini.
+## 🌟 Fitur Utama
+
+### 1. 🌐 Proxy Gateway & CORS Bypass
+- **Otomatis Bypass CORS**: Mengatasi batasan CORS browser saat FE memanggil backend staging/production lokal secara langsung.
+- **Dynamic Routing**: Cukup gunakan format URL `http://localhost:4000/[nama-service]/[path-endpoint]`.
+- **Environment Mapping**: Meneruskan request ke target service yang didaftarkan pada `.env` tanpa perlu mengubah kode sumber.
+- **Preflight & Hop-by-Hop Handling**: Menangani `OPTIONS` preflight dan membersihkan header yang tidak diperlukan secara aman.
+
+### 2. 📊 Live Logs & Traffic Inspector (`/logs`)
+- **Real-time Monitoring**: Memantau setiap lalu lintas HTTP masuk & keluar secara langsung dengan fitur *Live Polling*.
+- **Detail Request & Response**: Memeriksa HTTP Method, Status Code, Durasi Latensi (ms), URL, Query Params, Headers, serta Payload Request & Response.
+- **JSON Viewer Canggih**: Syntax highlighting, mode *Formatted JSON* vs *Raw Text*, fullscreen preview, dan tombol copy.
+- **Salin cURL**: 1-klik untuk mengonversi log traffic menjadi perintah `curl` siap pakai di terminal.
+- **Simpan Langsung Jadi Mock**: Mengubah respon nyata dari log menjadi Mock API aktif hanya dengan 1 klik!
+
+### 3. 🎭 Mock API Manager (`/mocks`)
+- **Simulasi Endpoint Mandiri**: Mocking respon API tanpa menyentuh backend sama sekali—sangat berguna jika backend belum selesai dibuat atau sedang *down*.
+- **Kontrol Penuh Respon**: Atur HTTP Status Code (200, 201, 400, 404, 500, dll.), Response Headers (JSON object), dan Response Body.
+- **Simulasi Latensi Jaringan**: Atur *Delay (ms)* untuk mensimulasikan kondisi koneksi jaringan lambat.
+- **Toggle On/Off Instan**: Mengaktifkan atau menonaktifkan mock tertentu kapan saja tanpa menghapus data.
+- **Penyimpanan Permanen**: Disimpan otomatis dalam file lokal `mocks.json`.
+
+### 4. ⚡ API Tester & cURL Importer (`/tester`)
+- **Built-in HTTP Client**: Pengujian endpoint ala Postman/Insomnia langsung di dalam browser via proxy gateway.
+- **Request Builder Fleksibel**:
+  - Pilihan HTTP Method (GET, POST, PUT, PATCH, DELETE).
+  - Key-Value builder untuk Query Parameters dan Request Headers (lengkap dengan auto-suggestions).
+  - Pilihan Request Body: `none`, `JSON` (dengan validasi format), `Form (x-www-form-urlencoded)`, atau `Plain Text`.
+- **Import dari cURL (Paste cURL)**: Salin cURL dari *Browser DevTools (Copy as cURL)* dan tempelkan langsung ke form pengujian secara otomatis.
+- **Live cURL Generator**: Menghasilkan perintah cURL secara dinamis sesuai konfigurasi form saat ini.
+- **Riwayat Pengujian (History)**: Riwayat request tersimpan secara lokal dan dapat dimuat ulang (*reload*) kapan saja.
+
+### 5. 🧭 Navigasi & Panduan Fitur
+- **Header Terpadu**: Navigasi tab modern dan konsisten di seluruh halaman aplikasi.
+- **Modal Panduan Fitur**: Pop-up dokumentasi interaktif yang menjelaskan seluruh menu dan cara pemakaian.
+- **Root Redirect**: Mengakses `http://localhost:4000/` otomatis mengarahkan pengguna ke dashboard log utama.
+
+---
+
+## 🏗️ Alur & Cara Kerja
+
+```
+Frontend (SSR & CSR)
+         │
+         ▼
+  [Middleware Studio] (http://localhost:4000)
+         │
+         ├─► Cek Mock Aktif di mocks.json ──► (Jika cocok) Return Mock Response
+         │
+         ├─► Forward ke Backend (env: <SERVICE>_URL)
+         │
+         ├─► Bypass CORS & Normalisasi Header
+         │
+         ├─► Catat ke Log Store (Live Logs)
+         │
+         ▼
+Target Backend Service (Kong / Microservices / Third-Party)
+```
+
+### Pola Pemanggilan Endpoint:
+
+Format URL:
+```
+http://localhost:4000/[nama-service]/[path-endpoint]
+```
+
+Contoh:
+```
+Request dari FE : http://localhost:4000/pos-service/v1/business-unit?page=1
+Service         : pos-service → POS_SERVICE_URL (di .env)
+Target Backend  : https://api.internal.com/pos-service/v1/business-unit?page=1
+```
+
+---
+
+## ⚙️ Konfigurasi Environment (`.env`)
+
+Setiap backend service didaftarkan pada file `.env` menggunakan format `<NAMA_SERVICE>_URL`:
+
+```env
+# Port aplikasi dev server
+PORT=4000
+
+# Service URL Mapping
+KONG_URL=https://kong.staging.internal.id
+USER_SERVICE_URL=https://user-api.internal.id
+ORDER_SERVICE_URL=https://order-api.internal.id
+AUTH_URL=https://auth.internal.id
+```
+
+### Aturan Penamaan Service:
+- Nama service di URL diubah ke huruf kapital.
+- Tanda hubung (`-`) diubah menjadi garis bawah (`_`).
+- Ditambahkan akhiran `_URL`.
+
+| Path dari Frontend | Environment Variable yang Digunakan |
+|---|---|
+| `/kong/...` | `KONG_URL` |
+| `/user-service/...` | `USER_SERVICE_URL` |
+| `/auth/...` | `AUTH_URL` |
+
+> **Catatan:** Nama service berikut dilindungi (*reserved*) untuk halaman internal dan tidak boleh dijadikan nama service: `logs`, `api`, `mocks`, `tester`.
+
+---
+
+## 🚀 Memulai Aplikasi
+
+### 1. Prasyarat
+- **Node.js** v18+ (disarankan v20+)
+- **npm** atau package manager lainnya
+
+### 2. Instalasi Dependensi
+```bash
+npm install
+```
+
+### 3. Buat File Konfigurasi `.env`
+Salin template dari `.env.example`:
+```bash
+cp .env.example .env
+```
+Sesuaikan URL backend target Anda di dalam file `.env`.
+
+### 4. Jalankan Dev Server
+```bash
+npm run dev
+```
+
+Aplikasi akan berjalan di:
+- **Dashboard Logs**: [http://localhost:4000/logs](http://localhost:4000/logs)
+- **Mock Manager**: [http://localhost:4000/mocks](http://localhost:4000/mocks)
+- **API Tester**: [http://localhost:4000/tester](http://localhost:4000/tester)
+
+---
+
+## 📁 Struktur Direktori
+
+```
+middleware-api/
+├── src/
+│   ├── app/
+│   │   ├── [service]/[...path]/     # Route proxy gateway & handler CORS
+│   │   ├── api/
+│   │   │   ├── logs/                # API REST internal untuk data log (GET, DELETE)
+│   │   │   └── mocks/               # API CRUD internal mock ([id]/route.ts)
+│   │   ├── logs/                    # Halaman UI Live Logs & Inspector
+│   │   ├── mocks/                   # Halaman UI Mock API Manager
+│   │   ├── tester/                  # Halaman UI API Tester & cURL importer
+│   │   ├── layout.tsx               # Root layout
+│   │   └── page.tsx                 # Root redirect ke /logs
+│   ├── components/
+│   │   └── Header.tsx               # Komponen Header navigasi bersama & modal panduan
+│   └── lib/
+│       ├── cors.ts                  # Konfigurasi header CORS & preflight
+│       ├── logStore.ts              # In-memory store untuk data log traffic
+│       ├── mockStore.ts             # Store persistence mock ke mocks.json
+│       └── proxy.ts                 # Core forwarding fetch, proxy logic, & header normalizer
+├── mocks.json                       # File penyimpanan konfigurasi mock aktif
+├── .env                             # Konfigurasi URL backend target
+└── package.json
+```
+
+---
+
+## 🛡️ Catatan Keamanan & Penggunaan
+- Aplikasi ini ditujukan untuk **lingkungan pengembangan lokal (development / testing)**.
+- CORS disetel mengizinkan semua origin (`*`) agar fleksibel saat proses development.
+- Data log disimpan dalam memori sementara (maks. 500 data terbaru), sedangkan konfigurasi Mock disimpan permanen di file `mocks.json`.
