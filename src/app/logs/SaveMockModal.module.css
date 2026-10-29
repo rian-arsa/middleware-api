@@ -1,0 +1,43 @@
+.overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal { background: #fff; border-radius: 14px; width: 100%; max-width: 540px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.35); overflow: hidden; }
+.header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.title { margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; }
+.subtitle { margin: 2px 0 0; font-size: 12px; color: #64748b; }
+.close { background: none; border: none; cursor: pointer; color: #94a3b8; padding: 4px; border-radius: 6px; display: inline-flex; }
+.close:hover { background: #f1f5f9; color: #475569; }
+.body { padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.source { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; min-width: 0; }
+.method { font-weight: 800; color: #166534; flex-shrink: 0; }
+.url { color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.status { margin-left: auto; flex-shrink: 0; padding: 2px 8px; border-radius: 999px; font-weight: 800; font-size: 11px; }
+.statusOk { background: #dcfce7; color: #166534; }
+.statusErr { background: #fee2e2; color: #991b1b; }
+.section { display: flex; flex-direction: column; gap: 10px; }
+.sectionTitle { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.05em; }
+.step { width: 20px; height: 20px; border-radius: 50%; background: #00aa13; color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; letter-spacing: 0; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 12px; font-weight: 600; color: #334155; }
+.hint { font-size: 11px; color: #94a3b8; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.input, .select { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; background: #fff; font-family: inherit; color: #0f172a; outline: none; }
+.input:focus, .select:focus { border-color: #00aa13; box-shadow: 0 0 0 3px rgba(0, 170, 19, 0.15); }
+.mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+.notice { font-size: 12px; padding: 8px 10px; border-radius: 8px; line-height: 1.45; }
+.noticeInfo { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+.noticeNew { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.noticeErr { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; }
+.check:hover { background: #f8fafc; }
+.check input { margin-top: 2px; accent-color: #00aa13; width: 16px; height: 16px; }
+.checkText strong { display: block; font-size: 13px; color: #0f172a; }
+.checkText span { font-size: 11px; color: #64748b; }
+.summary { font-size: 12px; color: #475569; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 8px 10px; }
+.summary b { color: #0f172a; }
+.footer { padding: 12px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; background: #fff; }
+.btn { padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; color: #334155; }
+.btn:hover { background: #f8fafc; }
+.btnPrimary { background: #00aa13; border-color: #00aa13; color: #fff; }
+.btnPrimary:hover { background: #009611; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.loading { padding: 24px; text-align: center; color: #64748b; font-size: 13px; }
+@media (max-width: 520px) { .row { grid-template-columns: 1fr; } }

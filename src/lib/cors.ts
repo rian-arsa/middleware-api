@@ -7,6 +7,7 @@ export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "*",
   "Access-Control-Allow-Credentials": "false",
+  "Access-Control-Expose-Headers": "x-mock, x-mock-collection",
 };
 
 /**

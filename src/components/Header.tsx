@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { CloseIcon } from "./Icons";
 
-export type NavTab = "logs" | "mocks" | "tester" | "docs";
+export type NavTab = "logs" | "mocks" | "tester" | "docs" | "settings";
 
 interface HeaderProps {
   currentTab: NavTab;
@@ -256,9 +257,9 @@ export default function Header({ currentTab, subtitle, rightSlot }: HeaderProps)
             )}
           </Link>
 
-          {/* Tab 4: Docs */}
+          {/* Tab 4: Settings (termasuk Dokumentasi) */}
           <Link
-            href="/docs"
+            href="/settings"
             style={{
               display: "flex",
               alignItems: "center",
@@ -267,10 +268,10 @@ export default function Header({ currentTab, subtitle, rightSlot }: HeaderProps)
               borderRadius: "9px",
               textDecoration: "none",
               fontSize: "13px",
-              fontWeight: currentTab === "docs" ? 700 : 500,
-              color: currentTab === "docs" ? "#0f172a" : "#64748b",
-              background: currentTab === "docs" ? "#ffffff" : "transparent",
-              boxShadow: currentTab === "docs" ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)" : "none",
+              fontWeight: currentTab === "settings" ? 700 : 500,
+              color: currentTab === "settings" ? "#0f172a" : "#64748b",
+              background: currentTab === "settings" ? "#ffffff" : "transparent",
+              boxShadow: currentTab === "settings" ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)" : "none",
               transition: "all 0.15s ease",
             }}
           >
@@ -279,26 +280,19 @@ export default function Header({ currentTab, subtitle, rightSlot }: HeaderProps)
               height="16"
               viewBox="0 0 24 24"
               fill="none"
-              stroke={currentTab === "docs" ? GOJEK_GREEN : "currentColor"}
+              stroke={currentTab === "settings" ? GOJEK_GREEN : "currentColor"}
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              <line x1="4" y1="6" x2="20" y2="6"></line>
+              <line x1="4" y1="12" x2="20" y2="12"></line>
+              <line x1="4" y1="18" x2="20" y2="18"></line>
+              <circle cx="9" cy="6" r="2" fill="#fff"></circle>
+              <circle cx="15" cy="12" r="2" fill="#fff"></circle>
+              <circle cx="8" cy="18" r="2" fill="#fff"></circle>
             </svg>
-            <span>Docs</span>
-            {currentTab === "docs" && (
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: GOJEK_GREEN,
-                  display: "inline-block",
-                }}
-              />
-            )}
+            <span>Settings</span>
           </Link>
         </nav>
 
@@ -417,22 +411,23 @@ export default function Header({ currentTab, subtitle, rightSlot }: HeaderProps)
               <button
                 type="button"
                 onClick={() => setGuideOpen(false)}
+                title="Tutup"
+                aria-label="Tutup"
                 style={{
                   background: "#f1f5f9",
                   border: "none",
                   borderRadius: "8px",
-                  width: 30,
-                  height: 30,
+                  width: 32,
+                  height: 32,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: "#64748b",
                   cursor: "pointer",
-                  fontSize: "18px",
-                  lineHeight: 1,
+                  transition: "background 0.15s ease",
                 }}
               >
-                &times;
+                <CloseIcon size={16} />
               </button>
             </div>
 

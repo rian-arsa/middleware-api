@@ -2,6 +2,19 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Header from "@/components/Header";
+import SaveMockModal, { type SaveMockLog } from "../logs/SaveMockModal";
+import {
+  CopyIcon,
+  CheckIcon,
+  MaximizeIcon,
+  ExpandHeightIcon,
+  CollapseHeightIcon,
+  TrashIcon,
+  CloseIcon,
+  ClipboardPasteIcon,
+  SaveIcon,
+  BracesIcon,
+} from "@/components/Icons";
 
 // --- Interfaces & Types ---
 
@@ -241,57 +254,74 @@ function CodeBlock({
                   ? "Kembalikan tinggi standar"
                   : "Tampilkan seluruh isi tanpa scroll"
               }
+              aria-label={
+                isFullHeight
+                  ? "Kembalikan tinggi standar"
+                  : "Tampilkan seluruh isi tanpa scroll"
+              }
               style={{
-                padding: "3px 8px",
+                width: 26,
+                height: 26,
                 borderRadius: "4px",
                 border: "1px solid #e2e8f0",
                 background: isFullHeight ? "#e2e8f0" : "#fff",
-                fontSize: "11px",
-                fontWeight: 500,
                 color: "#475569",
                 cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.15s ease",
               }}
             >
-              {isFullHeight ? "Tinggi Normal" : "Tinggi Penuh"}
+              {isFullHeight ? (
+                <CollapseHeightIcon size={13} />
+              ) : (
+                <ExpandHeightIcon size={13} />
+              )}
             </button>
 
             <button
               type="button"
               onClick={() => setIsFullscreen(true)}
               title="Buka tampilan modal layar penuh"
+              aria-label="Layar Penuh"
               style={{
-                padding: "3px 8px",
+                width: 26,
+                height: 26,
                 borderRadius: "4px",
                 border: "1px solid #e2e8f0",
                 background: "#fff",
-                fontSize: "11px",
-                fontWeight: 500,
                 color: "#475569",
                 cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.15s ease",
               }}
             >
-              Layar Penuh
+              <MaximizeIcon size={13} />
             </button>
 
             <button
               type="button"
               onClick={handleCopy}
+              title={copied ? "Tersalin!" : "Salin"}
+              aria-label="Salin"
               style={{
-                padding: "3px 10px",
+                width: 26,
+                height: 26,
                 borderRadius: "4px",
                 border: "1px solid #e5e7eb",
                 background: "#fff",
-                fontSize: "11px",
-                fontWeight: 600,
                 color: copied ? "#059669" : "#6b7280",
                 cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-                transition: "color 0.2s",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.15s ease",
               }}
             >
-              {copied ? "Tersalin" : "Salin"}
+              {copied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
             </button>
           </div>
         </div>
@@ -431,13 +461,15 @@ function CodeBlock({
                 )}
               </div>
               <div
-                style={{ display: "flex", gap: "10px", alignItems: "center" }}
+                style={{ display: "flex", gap: "8px", alignItems: "center" }}
               >
                 <button
                   type="button"
                   onClick={handleCopy}
+                  title={copied ? "Tersalin!" : "Salin"}
+                  aria-label="Salin"
                   style={{
-                    padding: "6px 14px",
+                    padding: "6px 12px",
                     borderRadius: "6px",
                     border: "1px solid #cbd5e1",
                     background: "#fff",
@@ -445,25 +477,34 @@ function CodeBlock({
                     fontWeight: 600,
                     color: copied ? "#059669" : "#334155",
                     cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
                   }}
                 >
-                  {copied ? "Tersalin" : "Salin"}
+                  {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
+                  <span>{copied ? "Tersalin" : "Salin"}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsFullscreen(false)}
+                  title="Tutup (ESC)"
+                  aria-label="Tutup"
                   style={{
-                    padding: "6px 12px",
+                    width: 32,
+                    height: 32,
                     borderRadius: "6px",
                     border: "none",
                     background: "#e2e8f0",
-                    fontSize: "13px",
-                    fontWeight: 600,
                     color: "#475569",
                     cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "background 0.15s ease",
                   }}
                 >
-                  Tutup (ESC)
+                  <CloseIcon size={16} />
                 </button>
               </div>
             </div>
@@ -590,7 +631,7 @@ function generateCurlFromState(
   headers: KeyValuePair[],
   body?: string
 ): string {
-  const targetUrl = url || "https://kong.eratech.id/v1/...";
+  const targetUrl = url || "https://api.example.com/v1/...";
   const lines: string[] = [`curl -X ${method} '${targetUrl}'`];
 
   headers.forEach(({ key, value }) => {
@@ -894,6 +935,14 @@ export default function TesterPage() {
   const [importCurlModalOpen, setImportCurlModalOpen] = useState<boolean>(false);
   const [curlInputModal, setCurlInputModal] = useState<string>("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastHref, setToastHref] = useState<string | null>(null);
+  const [saveMockLog, setSaveMockLog] = useState<SaveMockLog | null>(null);
+  const [lastSent, setLastSent] = useState<{
+    url: string;
+    method: string;
+    headers: Record<string, string>;
+    body: string | null;
+  } | null>(null);
 
   // Response state
   const [response, setResponse] = useState<ResponseState | null>(null);
@@ -1134,6 +1183,27 @@ export default function TesterPage() {
     return bodyText.trim().length > 0;
   }, [bodyMode, bodyText, formBody]);
 
+  const openSaveMock = () => {
+    if (!response || !lastSent) return;
+    let service = "";
+    try {
+      service = new URL(lastSent.url).pathname.split("/").filter(Boolean)[0] ?? "";
+    } catch {
+      service = lastSent.url.split("/").filter(Boolean)[0] ?? "";
+    }
+    setSaveMockLog({
+      id: `tester-${Date.now()}`,
+      url: lastSent.url,
+      method: lastSent.method,
+      status: response.status,
+      service: service || "default",
+      requestHeaders: lastSent.headers,
+      requestBody: lastSent.body,
+      responseHeaders: response.headers,
+      responseBody: response.body,
+    });
+  };
+
   // Send request
   const handleSend = async () => {
     const trimmedUrl = url.trim();
@@ -1213,6 +1283,12 @@ export default function TesterPage() {
       };
 
       setResponse(responseObj);
+      setLastSent({
+        url: finalUrl,
+        method,
+        headers: reqHeaders,
+        body: payload ? String(payload) : null,
+      });
 
       // Save to history
       const newHistoryItem: RequestHistoryItem = {
@@ -1304,6 +1380,11 @@ export default function TesterPage() {
           -webkit-overflow-scrolling: touch;
         }
 
+        /* Anak panel tidak boleh menyusut; kalau terlalu tinggi, panel yang di-scroll */
+        .tester-panel-left > * {
+          flex-shrink: 0 !important;
+        }
+
         .tester-panel-right {
           overflow-y: auto !important;
           overflow-x: hidden !important;
@@ -1328,12 +1409,15 @@ export default function TesterPage() {
           .tester-panels-wrapper {
             flex-direction: column !important;
             height: auto !important;
+            max-height: none !important;
             overflow: visible !important;
           }
           .tester-panel-left, .tester-panel-right {
+            flex: none !important;
             width: 100% !important;
             min-width: 0 !important;
             height: auto !important;
+            max-height: none !important;
             overflow: visible !important;
             border-right: none !important;
             border-bottom: 1px solid #e5e7eb !important;
@@ -1406,6 +1490,21 @@ export default function TesterPage() {
             width: "100%",
           }}
         >
+          {saveMockLog && (
+            <SaveMockModal
+              log={saveMockLog}
+              onClose={() => setSaveMockLog(null)}
+              onSaved={(message, href) => {
+                setSaveMockLog(null);
+                setToastMessage(message);
+                setToastHref(href);
+                setTimeout(() => {
+                  setToastMessage(null);
+                  setToastHref(null);
+                }, 6000);
+              }}
+            />
+          )}
           {/* ================= LEFT PANEL: Request Builder ================= */}
           <div
             className="tester-panel-left"
@@ -1445,20 +1544,32 @@ export default function TesterPage() {
               >
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <span>{toastMessage}</span>
+                  {toastHref && (
+                    <a
+                      href={toastHref}
+                      style={{ marginLeft: 10, color: GOJEK_GREEN, textDecoration: "underline" }}
+                    >
+                      Buka di Mocks
+                    </a>
+                  )}
                 </div>
                 <button
                   type="button"
                   onClick={() => setToastMessage(null)}
+                  title="Tutup"
+                  aria-label="Tutup notifikasi"
                   style={{
                     border: "none",
                     background: "transparent",
                     color: "#065f46",
                     cursor: "pointer",
-                    fontWeight: 700,
-                    fontSize: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "2px",
                   }}
                 >
-                  &times;
+                  <CloseIcon size={14} />
                 </button>
               </div>
             )}
@@ -1490,7 +1601,7 @@ export default function TesterPage() {
 
               <input
                 type="text"
-                placeholder="https://kong.eratech.id/v1/... atau tempel perintah cURL langsung di sini"
+                placeholder="https://api.example.com/v1/... atau tempel perintah cURL langsung di sini"
                 value={url}
                 onChange={(e) => handleUrlChange(e.target.value)}
                 onPaste={(e) => {
@@ -1521,21 +1632,21 @@ export default function TesterPage() {
                 type="button"
                 onClick={() => setImportCurlModalOpen(true)}
                 title="Paste dan import dari perintah cURL"
+                aria-label="Paste cURL"
                 style={{
                   background: "#f8fafc",
                   color: "#374151",
                   border: "1.5px solid #d1d5db",
                   borderRadius: "8px",
-                  padding: "8px 14px",
-                  fontSize: "12px",
-                  fontWeight: 600,
+                  padding: "8px 12px",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
-                  whiteSpace: "nowrap",
+                  justifyContent: "center",
+                  transition: "all 0.15s ease",
                 }}
               >
-                Paste cURL
+                <ClipboardPasteIcon size={16} />
               </button>
 
               <button
@@ -1721,7 +1832,7 @@ export default function TesterPage() {
               </div>
 
               {/* Tab Content Box */}
-              <div style={{ padding: "16px" }}>
+              <div style={{ padding: "16px", minHeight: "380px" }}>
                 {/* 1. PARAMS CONTENT */}
                 {activeTab === "params" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -1749,7 +1860,7 @@ export default function TesterPage() {
                         display: "flex",
                         flexDirection: "column",
                         gap: "8px",
-                        maxHeight: "190px",
+                        maxHeight: "min(420px, 50vh)",
                         overflowY: "auto",
                         paddingRight: "4px",
                       }}
@@ -1796,21 +1907,22 @@ export default function TesterPage() {
                             type="button"
                             onClick={() => removeParam(idx)}
                             title="Hapus baris"
+                            aria-label="Hapus baris"
                             style={{
                               height: "32px",
+                              width: "32px",
                               background: "#fff",
                               border: "1px solid #e5e7eb",
                               borderRadius: "6px",
                               color: "#ef4444",
-                              fontWeight: 700,
-                              fontSize: "14px",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
+                              transition: "all 0.15s ease",
                             }}
                           >
-                            &times;
+                            <TrashIcon size={14} />
                           </button>
                         </div>
                       ))}
@@ -1864,7 +1976,7 @@ export default function TesterPage() {
                         display: "flex",
                         flexDirection: "column",
                         gap: "8px",
-                        maxHeight: "190px",
+                        maxHeight: "min(420px, 50vh)",
                         overflowY: "auto",
                         paddingRight: "4px",
                       }}
@@ -1912,21 +2024,22 @@ export default function TesterPage() {
                             type="button"
                             onClick={() => removeHeader(idx)}
                             title="Hapus header"
+                            aria-label="Hapus header"
                             style={{
                               height: "32px",
+                              width: "32px",
                               background: "#fff",
                               border: "1px solid #e5e7eb",
                               borderRadius: "6px",
                               color: "#ef4444",
-                              fontWeight: 700,
-                              fontSize: "14px",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
+                              transition: "all 0.15s ease",
                             }}
                           >
-                            &times;
+                            <TrashIcon size={14} />
                           </button>
                         </div>
                       ))}
@@ -2006,9 +2119,13 @@ export default function TesterPage() {
                               fontSize: "11px",
                               fontWeight: 600,
                               cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
                             }}
+                            title="Format JSON"
+                            aria-label="Format JSON"
                           >
-                            Format JSON
+                            <BracesIcon size={14} />
                           </button>
                         </div>
                       )}
@@ -2041,8 +2158,8 @@ export default function TesterPage() {
                           }}
                           style={{
                             width: "100%",
-                            minHeight: "180px",
-                            maxHeight: "340px",
+                            minHeight: "300px",
+                            maxHeight: "60vh",
                             overflowY: "auto",
                             background: "#ffffff",
                             color: "#111827",
@@ -2069,8 +2186,8 @@ export default function TesterPage() {
                         onChange={(e) => setBodyText(e.target.value)}
                         style={{
                           width: "100%",
-                          minHeight: "180px",
-                          maxHeight: "340px",
+                          minHeight: "300px",
+                          maxHeight: "60vh",
                           overflowY: "auto",
                           background: "#ffffff",
                           color: "#111827",
@@ -2114,7 +2231,7 @@ export default function TesterPage() {
                             display: "flex",
                             flexDirection: "column",
                             gap: "8px",
-                            maxHeight: "190px",
+                            maxHeight: "min(420px, 50vh)",
                             overflowY: "auto",
                             paddingRight: "4px",
                           }}
@@ -2164,22 +2281,23 @@ export default function TesterPage() {
                               <button
                                 type="button"
                                 onClick={() => removeFormBody(idx)}
+                                title="Hapus field"
+                                aria-label="Hapus field"
                                 style={{
                                   height: "32px",
+                                  width: "32px",
                                   background: "#fff",
                                   border: "1px solid #e5e7eb",
                                   borderRadius: "6px",
                                   color: "#ef4444",
-                                  fontWeight: 700,
-                                  fontSize: "14px",
                                   cursor: "pointer",
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyItems: "center",
                                   justifyContent: "center",
+                                  transition: "all 0.15s ease",
                                 }}
                               >
-                                &times;
+                                <TrashIcon size={14} />
                               </button>
                             </div>
                           ))}
@@ -2264,18 +2382,23 @@ export default function TesterPage() {
                       e.stopPropagation();
                       handleCopyCurl();
                     }}
+                    title={curlCopied ? "cURL Tersalin!" : "Salin cURL"}
+                    aria-label="Salin cURL"
                     style={{
-                      padding: "4px 10px",
+                      width: 26,
+                      height: 26,
                       borderRadius: "4px",
                       border: "1px solid #e5e7eb",
                       background: "#fff",
-                      fontSize: "11px",
-                      fontWeight: 600,
                       color: curlCopied ? "#059669" : "#475569",
                       cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.15s ease",
                     }}
                   >
-                    {curlCopied ? "Tersalin" : "Salin"}
+                    {curlCopied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
                   </button>
                 )}
               </div>
@@ -2339,18 +2462,23 @@ export default function TesterPage() {
                       e.stopPropagation();
                       handleClearAllHistory();
                     }}
+                    title="Hapus Semua Riwayat"
+                    aria-label="Hapus Semua Riwayat"
                     style={{
-                      padding: "4px 10px",
+                      width: 26,
+                      height: 26,
                       borderRadius: "4px",
                       border: "1px solid #fca5a5",
                       background: "#fff",
-                      fontSize: "11px",
-                      fontWeight: 600,
                       color: "#ef4444",
                       cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.15s ease",
                     }}
                   >
-                    Hapus Semua
+                    <TrashIcon size={13} />
                   </button>
                 )}
               </div>
@@ -2453,18 +2581,22 @@ export default function TesterPage() {
                                 onClick={(e) =>
                                   handleDeleteHistoryItem(item.id, e)
                                 }
-                                title="Hapus item"
+                                title="Hapus item riwayat"
+                                aria-label="Hapus item riwayat"
                                 style={{
                                   border: "none",
                                   background: "transparent",
                                   color: "#9ca3af",
-                                  fontSize: "16px",
-                                  fontWeight: 700,
                                   cursor: "pointer",
-                                  padding: "0 4px",
+                                  padding: "2px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  borderRadius: "4px",
+                                  transition: "color 0.15s ease",
                                 }}
                               >
-                                &times;
+                                <TrashIcon size={12} />
                               </button>
                             </div>
                           </div>
@@ -2569,6 +2701,24 @@ export default function TesterPage() {
                       {formatBytes(response.size)}
                     </strong>
                   </span>
+                  <button
+                    type="button"
+                    onClick={openSaveMock}
+                    title="Simpan request & response ini sebagai mock endpoint"
+                    style={{
+                      marginLeft: "auto",
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      border: `1.5px solid ${GOJEK_GREEN}`,
+                      background: "#ecfdf5",
+                      color: "#047857",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <SaveIcon size={13} /> Save as Mock
+                  </button>
                 </div>
               ) : error ? (
                 <div
@@ -2746,16 +2896,22 @@ export default function TesterPage() {
               <button
                 type="button"
                 onClick={() => setImportCurlModalOpen(false)}
+                title="Tutup"
+                aria-label="Tutup modal import cURL"
                 style={{
                   background: "transparent",
                   border: "none",
-                  fontSize: "22px",
-                  lineHeight: 1,
                   color: "#9ca3af",
                   cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "4px",
+                  borderRadius: "6px",
+                  transition: "color 0.15s ease",
                 }}
               >
-                &times;
+                <CloseIcon size={18} />
               </button>
             </div>
 

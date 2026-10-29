@@ -2,6 +2,21 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Header from "@/components/Header";
+import Link from "next/link";
+import SaveMockModal from "./SaveMockModal";
+import {
+  CopyIcon,
+  CheckIcon,
+  MaximizeIcon,
+  ExpandHeightIcon,
+  CollapseHeightIcon,
+  RefreshIcon,
+  TrashIcon,
+  CloseIcon,
+  PanelExpandIcon,
+  PanelCollapseIcon,
+  SaveIcon,
+} from "@/components/Icons";
 
 interface LogEntry {
   id: string;
@@ -271,57 +286,66 @@ function CodeBlock({
             <button
               onClick={() => setIsFullHeight((prev) => !prev)}
               title={isFullHeight ? "Kembalikan tinggi standar" : "Tampilkan seluruh isi tanpa scroll"}
+              aria-label={isFullHeight ? "Kembalikan tinggi standar" : "Tampilkan seluruh isi tanpa scroll"}
               style={{
-                padding: "3px 8px",
+                width: 26,
+                height: 26,
                 borderRadius: "4px",
                 border: "1px solid #e2e8f0",
                 background: isFullHeight ? "#e2e8f0" : "#fff",
-                fontSize: "11px",
-                fontWeight: 500,
                 color: "#475569",
                 cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.15s ease",
               }}
             >
-              {isFullHeight ? "Tinggi Normal" : "Tinggi Penuh"}
+              {isFullHeight ? <CollapseHeightIcon size={13} /> : <ExpandHeightIcon size={13} />}
             </button>
 
             {/* Toggle Fullscreen Modal */}
             <button
               onClick={() => setIsFullscreen(true)}
               title="Buka tampilan modal layar penuh"
+              aria-label="Layar Penuh"
               style={{
-                padding: "3px 8px",
+                width: 26,
+                height: 26,
                 borderRadius: "4px",
                 border: "1px solid #e2e8f0",
                 background: "#fff",
-                fontSize: "11px",
-                fontWeight: 500,
                 color: "#475569",
                 cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.15s ease",
               }}
             >
-              Layar Penuh
+              <MaximizeIcon size={13} />
             </button>
 
             {/* Copy button */}
             <button
               onClick={handleCopy}
+              title={copied ? "Tersalin!" : "Salin"}
+              aria-label="Salin"
               style={{
-                padding: "3px 10px",
+                width: 26,
+                height: 26,
                 borderRadius: "4px",
                 border: "1px solid #e5e7eb",
                 background: "#fff",
-                fontSize: "11px",
-                fontWeight: 600,
                 color: copied ? "#059669" : "#6b7280",
                 cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-                transition: "color 0.2s",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.15s ease",
               }}
             >
-              {copied ? "Tersalin" : "Salin"}
+              {copied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
             </button>
           </div>
         </div>
@@ -447,11 +471,13 @@ function CodeBlock({
                   </div>
                 )}
               </div>
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 <button
                   onClick={handleCopy}
+                  title={copied ? "Tersalin!" : "Salin"}
+                  aria-label="Salin"
                   style={{
-                    padding: "6px 14px",
+                    padding: "6px 12px",
                     borderRadius: "6px",
                     border: "1px solid #cbd5e1",
                     background: "#fff",
@@ -459,24 +485,33 @@ function CodeBlock({
                     fontWeight: 600,
                     color: copied ? "#059669" : "#334155",
                     cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
                   }}
                 >
-                  {copied ? "Tersalin" : "Salin"}
+                  {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
+                  <span>{copied ? "Tersalin" : "Salin"}</span>
                 </button>
                 <button
                   onClick={() => setIsFullscreen(false)}
+                  title="Tutup (ESC)"
+                  aria-label="Tutup"
                   style={{
-                    padding: "6px 12px",
+                    width: 32,
+                    height: 32,
                     borderRadius: "6px",
                     border: "none",
                     background: "#e2e8f0",
-                    fontSize: "13px",
-                    fontWeight: 600,
                     color: "#475569",
                     cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "background 0.15s ease",
                   }}
                 >
-                  Tutup (ESC)
+                  <CloseIcon size={16} />
                 </button>
               </div>
             </div>
@@ -584,62 +619,30 @@ export default function LogsPage() {
   const [clearing, setClearing] = useState(false);
   const [panelWide, setPanelWide] = useState(false);
   const [curlCopied, setCurlCopied] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+    action?: { href: string; label: string };
+  } | null>(null);
 
-  const showToast = (message: string, type: "success" | "error" = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+  // Log yang sedang disimpan sebagai mock (modal tampil jika tidak null)
+  const [saveMockLog, setSaveMockLog] = useState<LogEntry | null>(null);
+
+  const showToast = (
+    message: string,
+    type: "success" | "error" = "success",
+    action?: { href: string; label: string }
+  ) => {
+    setToast({ message, type, action });
+    setTimeout(() => setToast(null), action ? 6000 : 3000);
   };
 
-  const handleSaveAsMock = async (log: LogEntry) => {
-    if (log.mockedBy) {
+  const handleSaveAsMock = (log: LogEntry) => {
+    if (log.mockedBy || log.url.startsWith("[MOCK]")) {
       showToast("Log ini sudah dari mock, tidak bisa disimpan ulang.", "error");
       return;
     }
-
-    let cleanPath = log.url;
-    try {
-      cleanPath = new URL(log.url).pathname;
-    } catch {
-      if (log.url.startsWith("[MOCK]")) {
-        showToast("Log ini sudah dari mock, tidak bisa disimpan ulang.", "error");
-        return;
-      }
-    }
-
-    if (log.url.startsWith("[MOCK]")) {
-      showToast("Log ini sudah dari mock, tidak bisa disimpan ulang.", "error");
-      return;
-    }
-
-    const normPath = cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`;
-    const name = `${log.method} ${normPath} - dari log ${log.id.slice(0, 8)}`;
-    const payload = {
-      name,
-      method: log.method,
-      service: log.service,
-      path: normPath,
-      responseStatus: log.status,
-      responseHeaders: log.responseHeaders || {},
-      responseBody: log.responseBody ?? "",
-      delayMs: 0,
-      enabled: true,
-    };
-
-    try {
-      const res = await fetch("/api/mocks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Gagal menyimpan mock");
-      }
-      showToast("Mock berhasil disimpan!");
-    } catch (err: any) {
-      showToast(err.message || "Gagal menyimpan mock", "error");
-    }
+    setSaveMockLog(log);
   };
 
   const handleCopyCurl = async () => {
@@ -768,18 +771,23 @@ export default function LogsPage() {
               <button
                 type="button"
                 onClick={fetchLogs}
+                title="Muat Ulang / Refresh"
+                aria-label="Muat Ulang"
                 style={{
-                  padding: "7px 12px",
+                  width: 32,
+                  height: 32,
                   borderRadius: "8px",
                   border: "1px solid #e2e8f0",
                   background: "#fff",
                   color: "#475569",
-                  fontSize: "12px",
-                  fontWeight: 600,
                   cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.15s ease",
                 }}
               >
-                Refresh
+                <RefreshIcon size={15} />
               </button>
 
               {/* Clear button */}
@@ -787,19 +795,24 @@ export default function LogsPage() {
                 type="button"
                 onClick={handleClear}
                 disabled={clearing || logs.length === 0}
+                title="Hapus Semua Log"
+                aria-label="Hapus Semua Log"
                 style={{
-                  padding: "7px 12px",
+                  width: 32,
+                  height: 32,
                   borderRadius: "8px",
                   border: "1px solid #fecaca",
                   background: "#fff",
                   color: "#ef4444",
-                  fontSize: "12px",
-                  fontWeight: 600,
                   cursor: logs.length === 0 ? "not-allowed" : "pointer",
                   opacity: logs.length === 0 ? 0.4 : 1,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.15s ease",
                 }}
               >
-                Hapus Log
+                <TrashIcon size={15} />
               </button>
             </>
           }
@@ -1046,9 +1059,12 @@ export default function LogsPage() {
                                 fontSize: "11px",
                                 fontWeight: 500,
                                 cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
                               }}
+                              aria-label="Simpan sebagai mock"
                             >
-                              Save as mock
+                              <SaveIcon size={13} />
                             </button>
                           )}
                         </td>
@@ -1136,8 +1152,12 @@ export default function LogsPage() {
                         fontWeight: 600,
                         cursor: "pointer",
                         fontFamily: "'Inter', sans-serif",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
                       }}
                     >
+                      <SaveIcon size={13} />
                       Save as mock
                     </button>
                   )}
@@ -1161,38 +1181,48 @@ export default function LogsPage() {
                       gap: "4px",
                     }}
                   >
-                    {curlCopied ? "✓ cURL Tersalin" : "Salin cURL"}
+                    {curlCopied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
+                    {curlCopied ? "cURL Tersalin" : "Salin cURL"}
                   </button>
                   <button
                     onClick={() => setPanelWide((prev) => !prev)}
                     title={panelWide ? "Perkecil panel (42%)" : "Perlebar panel (65%)"}
+                    aria-label={panelWide ? "Perkecil panel" : "Perlebar panel"}
                     style={{
-                      padding: "4px 10px",
+                      width: 28,
+                      height: 28,
                       borderRadius: "6px",
                       border: "1px solid #e5e7eb",
                       background: panelWide ? "#f1f5f9" : "#fff",
-                      fontSize: "11px",
-                      fontWeight: 600,
                       color: "#475569",
                       cursor: "pointer",
-                      fontFamily: "'Inter', sans-serif",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.15s ease",
                     }}
                   >
-                    {panelWide ? "Normal (42%)" : "Perlebar (65%)"}
+                    {panelWide ? <PanelCollapseIcon size={14} /> : <PanelExpandIcon size={14} />}
                   </button>
                   <button
                     onClick={() => setSelected(null)}
+                    title="Tutup detail"
+                    aria-label="Tutup detail"
                     style={{
+                      width: 28,
+                      height: 28,
                       background: "none",
                       border: "none",
                       color: "#9ca3af",
-                      fontSize: "20px",
                       cursor: "pointer",
-                      lineHeight: 1,
-                      padding: "2px 6px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "6px",
+                      transition: "all 0.15s ease",
                     }}
                   >
-                    &times;
+                    <CloseIcon size={16} />
                   </button>
                 </div>
               </div>
@@ -1219,21 +1249,24 @@ export default function LogsPage() {
                   </p>
                   <button
                     onClick={handleCopyCurl}
-                    title="Salin sebagai perintah cURL"
+                    title={curlCopied ? "cURL Tersalin!" : "Salin sebagai perintah cURL"}
+                    aria-label="Salin cURL"
                     style={{
                       flexShrink: 0,
-                      padding: "3px 8px",
+                      width: 26,
+                      height: 26,
                       borderRadius: "4px",
                       border: "1px solid #e5e7eb",
                       background: "#fff",
-                      fontSize: "11px",
-                      fontWeight: 500,
                       color: curlCopied ? "#00AA13" : "#4b5563",
                       cursor: "pointer",
-                      fontFamily: "'Inter', sans-serif",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.15s ease",
                     }}
                   >
-                    {curlCopied ? "✓ Tersalin" : "Salin cURL"}
+                    {curlCopied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
                   </button>
                 </div>
               </Section>
@@ -1282,6 +1315,18 @@ export default function LogsPage() {
             </div>
           )}
         </div>
+
+        {saveMockLog && (
+          <SaveMockModal
+            log={saveMockLog}
+            onClose={() => setSaveMockLog(null)}
+            onSaved={(message, href) => {
+              setSaveMockLog(null);
+              showToast(message, "success", { href, label: "Buka di Mocks" });
+            }}
+          />
+        )}
+
         {toast && (
           <div
             style={{
@@ -1299,6 +1344,14 @@ export default function LogsPage() {
             }}
           >
             {toast.message}
+            {toast.action && (
+              <Link
+                href={toast.action.href}
+                style={{ marginLeft: "12px", color: "#86efac", fontWeight: 700, textDecoration: "none" }}
+              >
+                {toast.action.label}
+              </Link>
+            )}
           </div>
         )}
       </div>

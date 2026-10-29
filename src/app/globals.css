@@ -26,9 +26,57 @@ body {
   flex-direction: column;
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--app-font, Arial, Helvetica, sans-serif);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+html[data-font="default"] { --app-font: Arial, Helvetica, sans-serif; }
+html[data-font="geist"] { --app-font: var(--font-geist-sans), sans-serif; }
+html[data-font="inter"] { --app-font: var(--font-inter), sans-serif; }
+html[data-font="roboto"] { --app-font: var(--font-roboto), sans-serif; }
+html[data-font="jakarta"] { --app-font: var(--font-jakarta), sans-serif; }
+html[data-font="system"] { --app-font: system-ui, -apple-system, "Segoe UI", sans-serif; }
+html[data-font="serif"] { --app-font: Georgia, "Times New Roman", serif; }
+
+html[data-codefont="jetbrains"] { --code-font: var(--font-jetbrains), monospace; }
+html[data-codefont="fira"] { --code-font: var(--font-fira), monospace; }
+html[data-codefont="source"] { --code-font: var(--font-source-code), monospace; }
+html[data-codefont="geist-mono"] { --code-font: var(--font-geist-mono), monospace; }
+html[data-codefont="consolas"] { --code-font: Consolas, Menlo, "Courier New", monospace; }
+html[data-codefont="courier"] { --code-font: "Courier New", Courier, monospace; }
+
+/*
+ * Halaman memakai font-family/font-size inline, jadi preferensi pengguna
+ * diterapkan lewat override !important. Elemen kode (request/response,
+ * textarea, pre, code) dikenali dari tag, class "mono"/"code", atau style
+ * inline yang menyebut mono/monospace.
+ */
+html[data-font] body,
+html[data-font] body *:not(:is(pre, code, textarea, [style*="mono" i], [class*="mono" i], [class*="code" i], [class*="textarea" i], [data-keepfont])):not(:is(pre, code, textarea, [style*="mono" i], [class*="mono" i], [class*="code" i], [class*="textarea" i], [data-keepfont]) *) {
+  font-family: var(--app-font) !important;
+}
+
+html[data-codefont] body :is(pre, code, textarea, [style*="mono" i], [class*="mono" i], [class*="code" i], [class*="textarea" i]):not([data-keepfont]):not([data-keepfont] *),
+html[data-codefont] body :is(pre, code, textarea, [style*="mono" i], [class*="mono" i], [class*="code" i], [class*="textarea" i]):not([data-keepfont] *) * {
+  font-family: var(--code-font) !important;
+}
+
+html[data-codesize] body :is(pre, code, textarea, [style*="mono" i], [class*="mono" i], [class*="textarea" i]):not([data-keepfont] *):not([data-keepfont]),
+html[data-codesize] body :is(pre, code, textarea, [style*="mono" i], [class*="mono" i], [class*="textarea" i]):not([data-keepfont] *) * {
+  font-size: var(--code-size) !important;
+}
+
+html[data-codesize] body pre,
+html[data-codesize] body textarea {
+  line-height: 1.55 !important;
 }
 
 * {
