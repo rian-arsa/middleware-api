@@ -242,7 +242,7 @@ export default function DocsPage() {
       <div style={{ height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Navigation Header */}
         <Header
-          currentTab="docs"
+          currentTab="settings"
           subtitle="Dokumentasi Teknis, Arsitektur & Panduan Integrasi"
         />
 
@@ -401,7 +401,7 @@ export default function DocsPage() {
                   <ul style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.6, paddingLeft: "18px" }}>
                     <li><strong>Bypass CORS Lengkap:</strong> Proxy perantara menyisipkan header CORS yang valid ke seluruh respon balik ke browser.</li>
                     <li><strong>Monitoring Sentral:</strong> Seluruh lalu lintas HTTP dari SSR maupun CSR dicatat secara terpadu di halaman <code>/logs</code>.</li>
-                    <li><strong>Mock API Instan:</strong> Pengembang dapat membuat respon simulasi mandiri kapan saja di halaman <code>/mocks</code>.</li>
+                    <li><strong>Mock API Instan:</strong> Mock API Manager ala Postman Collection di halaman <code>/mocks</code>, lengkap dengan dokumentasi otomatis.</li>
                   </ul>
                 </div>
               </div>
@@ -417,7 +417,7 @@ export default function DocsPage() {
         ▼
 [Middleware Studio Core]
         │
-        ├─► [Mock Engine]: Apakah ada Mock aktif yang cocok di mocks.json?
+        ├─► [Mock Engine]: Apakah ada response AKTIF yang cocok (collection, endpoint, method, path)?
         │       │
         │       ├─► (YA)  Tunggu simulasi delayMs ──► Kembalikan Mock Response + CORS Headers
         │       │
@@ -466,7 +466,7 @@ export default function DocsPage() {
               <CodeBox
                 title="Contoh .env"
                 singleCode={`# Konfigurasi Backend Targets
-KONG_URL=https://kong.staging.eratech.id
+KONG_URL=https://kong.staging.example.com
 USER_SERVICE_URL=https://user-api.internal.id
 INVENTORY_SERVICE_URL=https://inventory.internal.id/api/v2
 AUTH_URL=https://auth.internal.id`}
@@ -550,10 +550,10 @@ AUTH_URL=https://auth.internal.id`}
                 </div>
                 <div style={{ background: "#ffffff", padding: "14px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                   <h4 style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b", marginBottom: "4px" }}>
-                    Simpan Langsung Jadi Mock
+                    Simpan Jadi Mock
                   </h4>
                   <p style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.5 }}>
-                    Konversi respon riil backend dari tabel log menjadi Mock API aktif dengan satu klik tombol <strong>Simpan jadi Mock</strong>.
+                    Tombol <strong>Save as mock</strong> membuka dialog 3 langkah: pilih collection dan folder, atur path endpoint (bagian dinamis bisa diganti <code>:id</code>), lalu beri nama response. Header, query, dan body request ikut tersimpan sebagai dokumentasi; nilai Authorization dan cookie diganti placeholder. Log yang berasal dari mock tidak dapat disimpan ulang.
                   </p>
                 </div>
               </div>
@@ -574,23 +574,66 @@ AUTH_URL=https://auth.internal.id`}
                 </h2>
               </div>
               <p style={{ fontSize: "13.5px", color: "#475569", lineHeight: 1.7, marginBottom: "14px" }}>
-                Mock Manager memungkinkan pengembang menyimulasikan respon API apa pun tanpa melakukan perubahan pada kode backend.
+                Mock Manager bekerja seperti <strong>Postman Collection</strong>: endpoint dikelompokkan dalam collection dan folder, setiap endpoint punya beberapa skenario response, dan seluruhnya otomatis menjadi dokumentasi API yang bisa dibagikan.
               </p>
 
               <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>
-                Parameter Konfigurasi Mock:
+                Struktur Data
+              </h3>
+              <CodeBox
+                title="Collection → Folder → Endpoint → Response"
+                singleCode={`Collection  (satu per service, mis. POS B2B, service = pos-b2b)
+  └─ Folder    (pengelompokan, mis. Auth, Master)
+       └─ Endpoint  (method + path, mis. POST /v1/pos/auth/login)
+            └─ Response / skenario (200 Sukses, 401 Token Habis, 500 Error ...)
+                 ← hanya SATU response yang AKTIF dan dikirim saat endpoint dipanggil`}
+              />
+
+              <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", margin: "16px 0 8px" }}>
+                Tata Letak Workspace
               </h3>
               <ul style={{ fontSize: "13px", color: "#475569", lineHeight: 1.8, paddingLeft: "20px", marginBottom: "16px" }}>
-                <li><strong>Nama Mock:</strong> Label identifikasi deskriptif (contoh: <em>GET /users - Simulasi Data Kosong</em>).</li>
-                <li><strong>Method & Service & Path:</strong> Kriteria pencocokan request yang masuk (contoh: <code>GET</code>, service <code>kong</code>, path <code>/v1/users</code>).</li>
-                <li><strong>HTTP Status:</strong> Status code respons (contoh: <code>200</code>, <code>400</code>, <code>401</code>, <code>404</code>, atau <code>500</code>).</li>
-                <li><strong>Delay Simulasi (ms):</strong> Jeda latensi sebelum respon dikirim (contoh: <code>1500 ms</code> untuk menguji komponen loading/skeleton UI).</li>
-                <li><strong>Response Headers:</strong> Objek JSON header tambahan (otomatis digabungkan dengan CORS headers).</li>
-                <li><strong>Response Body:</strong> Konten payload respons (JSON atau teks).</li>
-                <li><strong>Toggle Aktif:</strong> Kontrol aktif/nonaktif mock tanpa menghapus konfigurasi.</li>
+                <li><strong>Sidebar kiri:</strong> pohon collection, folder, dan endpoint dengan pencarian (<code>Ctrl+K</code>), filter method dan service, menu klik kanan (rename, duplikat, hapus), serta lebar yang bisa digeser.</li>
+                <li><strong>Tab di area utama:</strong> beberapa endpoint dapat dibuka sekaligus seperti tab Postman.</li>
+                <li><strong>Tab Docs:</strong> nama, deskripsi, query params, headers, contoh request body, daftar response, dan code snippet (cURL, fetch, axios).</li>
+                <li><strong>Tab Responses:</strong> kelola skenario response: nama, status code (preset tersedia), delay 0–60000 ms, headers, body, tombol Format/Minify JSON, duplikat, hapus, dan pilih mana yang aktif.</li>
+                <li><strong>Tab Try it:</strong> kirim request ke mock. Di atasnya tampil <strong>URL Backend Asli</strong> (dari <code>&lt;SERVICE&gt;_URL</code>) beserta tombol Copy URL dan Copy cURL.</li>
+                <li><strong>Panel collection:</strong> klik nama collection untuk melihat base URL, statistik, export JSON, dan tombol <strong>Lihat Dokumentasi</strong>.</li>
               </ul>
 
               <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>
+                Cara Membuat Mock
+              </h3>
+              <ol style={{ fontSize: "13px", color: "#475569", lineHeight: 1.8, paddingLeft: "20px", marginBottom: "16px" }}>
+                <li><strong>Dari nol:</strong> buat Collection (nama + service), tambah Folder, lalu Endpoint (method + path), kemudian tambah Response.</li>
+                <li><strong>Dari Logs:</strong> klik <strong>Save as mock</strong> pada request yang sudah terjadi.</li>
+                <li><strong>Dari API Tester:</strong> kirim request, lalu klik <strong>Save as Mock</strong> di panel response.</li>
+                <li><strong>Import:</strong> impor file JSON hasil export collection. Export tersedia per collection maupun semua sekaligus.</li>
+              </ol>
+
+              <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>
+                Aturan Pencocokan & Perilaku
+              </h3>
+              <ul style={{ fontSize: "13px", color: "#475569", lineHeight: 1.8, paddingLeft: "20px", marginBottom: "16px" }}>
+                <li>URL mock adalah <code>http://localhost:4000/&#123;service&#125;&#123;path&#125;</code>. Prefix service tidak perlu ditulis lagi di path endpoint.</li>
+                <li><strong>Path parameter:</strong> gunakan <code>:id</code>, contoh <code>/users/:id</code> cocok dengan <code>/users/42</code>.</li>
+                <li>Mock hanya aktif bila collection, endpoint, dan response aktif sama-sama menyala. Jika endpoint tidak punya response aktif, request diteruskan ke backend asli.</li>
+                <li>Response mock membawa header <code>x-mock</code> dan <code>x-mock-collection</code>, serta ditandai MOCK di <code>/logs</code>.</li>
+                <li>Header CORS otomatis ditambahkan ke response mock.</li>
+              </ul>
+
+              <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>
+                Dokumentasi Otomatis
+              </h3>
+              <p style={{ fontSize: "13px", color: "#475569", lineHeight: 1.7, marginBottom: "16px" }}>
+                Setiap collection punya halaman dokumentasi read-only di <code>/mocks/docs/&#123;collectionId&#125;</code> yang bisa dibuka tim lain atau dicetak ke PDF. Isinya daftar endpoint beserta parameter, contoh request, contoh response, dan snippet kode. Konten diambil dari tab Docs, jadi lengkapi deskripsi dan parameter agar dokumentasinya berguna.
+              </p>
+
+              <Callout type="tip" title="Pintasan Keyboard">
+                <code>Ctrl+K</code> fokus ke pencarian, <code>Ctrl+S</code> menyimpan perubahan di tab Docs, <code>Ctrl+Enter</code> mengirim request di tab Try it, dan tombol <strong>?</strong> di pojok kanan bawah menampilkan semua pintasan.
+              </Callout>
+
+              <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", margin: "16px 0 8px" }}>
                 Skenario Penggunaan Mock:
               </h3>
               <CodeBox
@@ -644,7 +687,8 @@ Response Body : {
                 <li>Tentukan target URL (contoh: <code>http://localhost:4000/kong/v1/business-unit</code>).</li>
                 <li>Tambahkan <strong>Query Params</strong> atau <strong>Request Headers</strong> sesuai kebutuhan.</li>
                 <li>Untuk method yang membawa payload, konfigurasikan <strong>Body</strong> (JSON, Form x-www-form-urlencoded, atau Plain Text).</li>
-                <li>Klik tombol <strong>Kirim Request</strong> untuk melihat status respon, durasi latensi, ukuran payload, dan body respons.</li>
+                <li>Klik <strong>GO</strong> untuk melihat status respon, durasi, ukuran, body, dan header respons. Panel kiri dan kanan dapat di-scroll terpisah.</li>
+                <li>Klik <strong>Save as Mock</strong> di panel response untuk menyimpan hasilnya sebagai mock (collection dipilih di dialog, header dan body request ikut tersimpan sebagai dokumentasi).</li>
               </ol>
 
               <Callout type="tip" title="Impor Instan via Paste cURL">
@@ -754,7 +798,25 @@ curl -X POST 'http://localhost:4000/user-service/api/users' \\
                     Q: Apakah Mock API tetap berfungsi saat server backend target mati?
                   </h4>
                   <p style={{ fontSize: "13px", color: "#64748b", lineHeight: 1.6 }}>
-                    Tetap berfungsi. Middleware mengevaluasi data mock yang aktif terlebih dahulu. Jika request cocok dengan mock yang aktif, respons simulasi langsung dikembalikan tanpa melakukan koneksi jaringan ke backend asli.
+                    Tetap berfungsi. Middleware mengevaluasi response aktif terlebih dahulu. Jika request cocok, respons simulasi langsung dikembalikan tanpa koneksi ke backend asli.
+                  </p>
+                </div>
+
+                <div style={{ background: "#ffffff", padding: "16px 20px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                  <h4 style={{ fontSize: "13.5px", fontWeight: 700, color: "#0f172a", marginBottom: "6px" }}>
+                    Q: Mock sudah dibuat tetapi request tetap ke backend asli?
+                  </h4>
+                  <p style={{ fontSize: "13px", color: "#64748b", lineHeight: 1.6 }}>
+                    Periksa tiga hal: collection dan endpoint dalam keadaan aktif, endpoint punya response yang ditandai <strong>aktif</strong>, dan path tidak mengandung prefix service lagi (URL mock sudah <code>/&#123;service&#125;&#123;path&#125;</code>). Method dan path juga harus sama persis, gunakan <code>:id</code> untuk bagian dinamis.
+                  </p>
+                </div>
+
+                <div style={{ background: "#ffffff", padding: "16px 20px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                  <h4 style={{ fontSize: "13.5px", fontWeight: 700, color: "#0f172a", marginBottom: "6px" }}>
+                    Q: Header dan body request tidak muncul setelah Save as mock?
+                  </h4>
+                  <p style={{ fontSize: "13px", color: "#64748b", lineHeight: 1.6 }}>
+                    Pastikan kotak <strong>Simpan juga request</strong> dicentang di dialog. Request GET memang tidak punya body. Jika endpoint sudah ada, hanya kolom dokumentasi yang masih kosong yang diisi. Lihat hasilnya di tab <strong>Docs</strong>.
                   </p>
                 </div>
 
@@ -763,7 +825,7 @@ curl -X POST 'http://localhost:4000/user-service/api/users' \\
                     Q: Apakah data konfigurasi Mock tersimpan permanen?
                   </h4>
                   <p style={{ fontSize: "13px", color: "#64748b", lineHeight: 1.6 }}>
-                    Ya. Konfigurasi Mock disimpan pada berkas <code>mocks.json</code> di root repositori sehingga tidak hilang saat server di-restart. Sementara riwayat log lalu lintas pada <code>/logs</code> disimpan secara in-memory untuk kebutuhan runtime monitoring.
+                    Ya. Konfigurasi Mock disimpan pada berkas <code>mocks.json</code> di root repositori sehingga tidak hilang saat server di-restart. Sementara riwayat log lalu lintas pada <code>/logs</code> disimpan secara in-memory (maksimal 500 entri).
                   </p>
                 </div>
 

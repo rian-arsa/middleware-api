@@ -168,3 +168,20 @@
 }
 
 .btn.btnIcon { width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0; justify-content: center; gap: 0; }
+
+.statusDot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.statusOn { background: #00aa13; box-shadow: 0 0 0 3px #e6f9ec; }
+.statusOff { background: #9ca3af; }
+.statusWarn { background: #f59e0b; }
+.offPill { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; color: #6b7280; background: #f3f4f6; border: 1px solid #e5e7eb; padding: 1px 6px; border-radius: 10px; }
+.statusBanner { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; margin: 12px 0; border: 1px solid; }
+.statusBannerOn { background: #ecfdf3; border-color: #bbf7d0; color: #166534; }
+.statusBannerOff { background: #f3f4f6; border-color: #e5e7eb; color: #4b5563; }
+.statusBannerWarn { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+.statusBannerText { flex: 1; min-width: 0; font-size: 12px; line-height: 1.4; }
+.statusBannerText strong { display: block; font-size: 13px; }
+.switch { position: relative; width: 38px; height: 22px; border-radius: 22px; border: none; background: #d1d5db; cursor: pointer; flex-shrink: 0; transition: background 0.15s; padding: 0; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
+.switchOn { background: #00aa13; }
+.switchOn::after { transform: translateX(16px); }
+.switch:focus-visible { outline: 2px solid #00aa13; outline-offset: 2px; }

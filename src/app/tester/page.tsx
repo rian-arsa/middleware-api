@@ -631,7 +631,7 @@ function generateCurlFromState(
   headers: KeyValuePair[],
   body?: string
 ): string {
-  const targetUrl = url || "https://kong.eratech.id/v1/...";
+  const targetUrl = url || "https://api.example.com/v1/...";
   const lines: string[] = [`curl -X ${method} '${targetUrl}'`];
 
   headers.forEach(({ key, value }) => {
@@ -1601,7 +1601,7 @@ export default function TesterPage() {
 
               <input
                 type="text"
-                placeholder="https://kong.eratech.id/v1/... atau tempel perintah cURL langsung di sini"
+                placeholder="https://api.example.com/v1/... atau tempel perintah cURL langsung di sini"
                 value={url}
                 onChange={(e) => handleUrlChange(e.target.value)}
                 onPaste={(e) => {

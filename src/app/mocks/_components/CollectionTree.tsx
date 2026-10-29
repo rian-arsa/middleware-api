@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronDownIcon, ChevronRightIcon, FolderIcon, FolderOpenIcon, LayersIcon } from "@/components/Icons";
 import type { MockCollection } from "@/lib/mockTypes";
 import { groupLabel } from "@/lib/mockDocs";
-import { Highlight, MethodBadge } from "./ui";
+import { Highlight, MethodBadge, StatusDot } from "./ui";
+import { getMockStatus } from "@/lib/mockUi";
 import s from "./mocks.module.css";
 
 export type TreeTarget =
@@ -119,6 +120,7 @@ export default function CollectionTree({
               <span className={s.rowLabel} style={{ fontWeight: 700 }} title={`${c.name} (service: ${c.service})`}>
                 <Highlight text={c.name} query={query} />
               </span>
+              {!c.enabled && <span className={s.offPill}>OFF</span>}
               <button
                 type="button"
                 className={`${s.iconBtn} ${s.rowMenu}`}
@@ -201,7 +203,7 @@ export default function CollectionTree({
                       f.groups.map((g) => (
                         <div
                           key={g.id}
-                          className={`${s.row} ${g.id === activeGroupId ? s.rowActive : ""} ${g.enabled && c.enabled ? "" : s.rowDim}`}
+                          className={`${s.row} ${g.id === activeGroupId ? s.rowActive : ""} ${getMockStatus(c, g).kind === "off" ? s.rowDim : ""}`}
                           style={{ paddingLeft: 40 }}
                           role="treeitem"
                           tabIndex={0}
@@ -220,6 +222,7 @@ export default function CollectionTree({
                           <span className={s.rowLabel}>
                             <Highlight text={groupLabel(g)} query={query} />
                           </span>
+                          <StatusDot status={getMockStatus(c, g)} />
                           <button
                             type="button"
                             className={`${s.iconBtn} ${s.rowMenu}`}

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import type { MockCollection } from "@/lib/mockTypes";
 import { buildMockUrl, countStats, groupLabel } from "@/lib/mockDocs";
-import { CopyButton, MethodBadge } from "./ui";
+import { CopyButton, MethodBadge, StatusBanner, StatusDot } from "./ui";
+import { getMockStatus } from "@/lib/mockUi";
 import { DownloadIcon, TrashIcon } from "@/components/Icons";
 import type { MocksActions } from "./useMocks";
 import s from "./mocks.module.css";
@@ -30,6 +31,10 @@ export default function CollectionPanel({
 
   const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:4000";
   const stats = countStats([collection]);
+  const activeEndpoints = collection.folders.reduce(
+    (n, f) => n + f.groups.filter((g) => getMockStatus(collection, g).kind === "on").length,
+    0
+  );
 
   const save = async (d: Partial<Pick<MockCollection, "name" | "description" | "enabled">>) => {
     try {
@@ -64,10 +69,17 @@ export default function CollectionPanel({
           <div className={s.flex}>
             <span className={`${s.mono}`}>{buildMockUrl(origin, collection.service, "")}</span>
             <CopyButton text={buildMockUrl(origin, collection.service, "")} label="Copy Base URL" />
-            <label className={s.flex} style={{ gap: 6 }}>
-              <input type="checkbox" checked={collection.enabled} onChange={(e) => save({ enabled: e.target.checked })} /> Aktif
-            </label>
           </div>
+          <StatusBanner
+            status={
+              collection.enabled
+                ? { kind: "on", label: "Mock AKTIF", detail: `${activeEndpoints} dari ${stats.endpoints} endpoint melayani response mock.` }
+                : { kind: "off", label: "Mock NONAKTIF", detail: "Semua endpoint di collection ini diteruskan ke backend asli." }
+            }
+            checked={collection.enabled}
+            onToggle={(v) => save({ enabled: v })}
+            toggleLabel={collection.enabled ? "Nonaktifkan collection" : "Aktifkan collection"}
+          />
           <div className={s.muted}>
             {collection.folders.length} folder • {stats.endpoints} endpoint • {stats.variants} response
           </div>
@@ -91,6 +103,7 @@ export default function CollectionPanel({
                   <MethodBadge method={g.method} />
                   <span className={s.rowLabel}>{groupLabel(g)}</span>
                   <span className={`${s.muted} ${s.mono}`}>{g.path}</span>
+                  <StatusDot status={getMockStatus(collection, g)} />
                 </div>
               ))}
             </div>

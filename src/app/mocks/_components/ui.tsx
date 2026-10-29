@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CheckIcon, CloseIcon, CopyIcon, TrashIcon } from "@/components/Icons";
 import type { KeyValueDoc } from "@/lib/mockTypes";
-import { getMethodStyle, getStatusStyle } from "@/lib/mockUi";
+import { getMethodStyle, getStatusStyle, type MockStatus } from "@/lib/mockUi";
 import s from "./mocks.module.css";
 
 export function MethodBadge({ method }: { method: string }) {
@@ -51,6 +51,44 @@ export function CopyButton({ text, label = "Copy", className, iconOnly }: { text
       {done ? <CheckIcon size={iconOnly ? 14 : 12} /> : <CopyIcon size={iconOnly ? 14 : 12} />}
       {!iconOnly && <> {done ? "Tersalin" : label}</>}
     </button>
+  );
+}
+
+export function StatusDot({ status }: { status: MockStatus }) {
+  const cls = status.kind === "on" ? s.statusOn : status.kind === "off" ? s.statusOff : s.statusWarn;
+  return <span className={`${s.statusDot} ${cls}`} title={`${status.label}. ${status.detail}`} role="img" aria-label={status.label} />;
+}
+
+export function StatusBanner({
+  status,
+  checked,
+  onToggle,
+  toggleLabel,
+}: {
+  status: MockStatus;
+  checked: boolean;
+  onToggle: (v: boolean) => void;
+  toggleLabel: string;
+}) {
+  const cls = status.kind === "on" ? s.statusBannerOn : status.kind === "off" ? s.statusBannerOff : s.statusBannerWarn;
+  const dot = status.kind === "on" ? s.statusOn : status.kind === "off" ? s.statusOff : s.statusWarn;
+  return (
+    <div className={`${s.statusBanner} ${cls}`} role="status">
+      <span className={`${s.statusDot} ${dot}`} aria-hidden="true" />
+      <div className={s.statusBannerText}>
+        <strong>{status.label}</strong>
+        {status.detail}
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={toggleLabel}
+        title={toggleLabel}
+        className={`${s.switch} ${checked ? s.switchOn : ""}`}
+        onClick={() => onToggle(!checked)}
+      />
+    </div>
   );
 }
 

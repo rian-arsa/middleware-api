@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import type { MockCollection, MockFolder, MockGroup } from "@/lib/mockTypes";
 import { buildMockUrl, groupLabel } from "@/lib/mockDocs";
-import { METHODS } from "@/lib/mockUi";
+import { METHODS, getMockStatus } from "@/lib/mockUi";
 import DocsTab from "./DocsTab";
 import ResponsesTab from "./ResponsesTab";
 import TryItTab from "./TryItTab";
-import { CopyButton } from "./ui";
+import { CopyButton, StatusBanner } from "./ui";
 import type { MocksActions } from "./useMocks";
 import s from "./mocks.module.css";
 
@@ -35,6 +35,7 @@ export default function EndpointPanel({
   const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:4000";
   const fullUrl = buildMockUrl(origin, collection.service, group.path);
   const active = group.variants.find((v) => v.id === group.activeVariantId);
+  const status = getMockStatus(collection, group);
 
   const update = async (d: Partial<MockGroup>) => {
     try {
@@ -78,22 +79,20 @@ export default function EndpointPanel({
           onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
         />
         <CopyButton text={fullUrl} label="Copy URL" />
-        <label className={s.flex} style={{ gap: 6 }}>
-          <input type="checkbox" checked={group.enabled !== false} onChange={(e) => update({ enabled: e.target.checked })} />
-          Aktif
-        </label>
       </div>
       <div className={s.muted} style={{ marginTop: 4 }}>
         Tip: gunakan <code>:id</code> untuk parameter dinamis, mis. <code>/users/:id</code>.
       </div>
 
-      {active ? (
-        <div className={`${s.notice} ${s.noticeOk}`}>
+      <StatusBanner
+        status={status}
+        checked={group.enabled !== false}
+        onToggle={(v) => update({ enabled: v })}
+        toggleLabel={group.enabled !== false ? "Nonaktifkan endpoint" : "Aktifkan endpoint"}
+      />
+      {status.kind === "on" && active && (
+        <div className={`${s.notice} ${s.noticeOk}`} style={{ marginTop: 0 }}>
           Response aktif: {active.responseStatus} {active.name}
-        </div>
-      ) : (
-        <div className={`${s.notice} ${s.noticeWarn}`}>
-          Peringatan: Belum ada response aktif — request akan diteruskan ke backend asli.
         </div>
       )}
 

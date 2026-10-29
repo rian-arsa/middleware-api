@@ -37,4 +37,29 @@ export const STATUS_PRESETS: { code: number; text: string }[] = [
   { code: 503, text: "Service Unavailable" },
 ];
 
-export const RESERVED_SERVICES = ["logs", "api", "mocks", "tester", "docs"];
+export const RESERVED_SERVICES = ["logs", "api", "mocks", "tester", "docs", "settings"];
+
+export type MockStatusKind = "on" | "off" | "passthrough";
+
+export interface MockStatus {
+  kind: MockStatusKind;
+  label: string;
+  detail: string;
+}
+
+/** Status efektif sebuah endpoint: apakah request benar-benar dilayani oleh mock. */
+export function getMockStatus(
+  collection: { enabled: boolean },
+  group: { enabled?: boolean; activeVariantId?: string | null; variants: { id: string }[] }
+): MockStatus {
+  if (!collection.enabled) {
+    return { kind: "off", label: "Mock NONAKTIF", detail: "Collection dinonaktifkan. Semua request diteruskan ke backend asli." };
+  }
+  if (group.enabled === false) {
+    return { kind: "off", label: "Mock NONAKTIF", detail: "Endpoint ini dinonaktifkan. Request diteruskan ke backend asli." };
+  }
+  if (!group.variants.some((v) => v.id === group.activeVariantId)) {
+    return { kind: "passthrough", label: "Belum ada response aktif", detail: "Tidak ada response yang dipilih aktif. Request diteruskan ke backend asli." };
+  }
+  return { kind: "on", label: "Mock AKTIF", detail: "Request ke endpoint ini dilayani oleh mock." };
+}
