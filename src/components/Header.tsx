@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { CloseIcon } from "./Icons";
 
 export type NavTab = "logs" | "mocks" | "tester" | "docs";
 
@@ -417,22 +418,23 @@ export default function Header({ currentTab, subtitle, rightSlot }: HeaderProps)
               <button
                 type="button"
                 onClick={() => setGuideOpen(false)}
+                title="Tutup"
+                aria-label="Tutup"
                 style={{
                   background: "#f1f5f9",
                   border: "none",
                   borderRadius: "8px",
-                  width: 30,
-                  height: 30,
+                  width: 32,
+                  height: 32,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: "#64748b",
                   cursor: "pointer",
-                  fontSize: "18px",
-                  lineHeight: 1,
+                  transition: "background 0.15s ease",
                 }}
               >
-                &times;
+                <CloseIcon size={16} />
               </button>
             </div>
 

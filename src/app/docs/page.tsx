@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Header from "@/components/Header";
+import { CopyIcon, CheckIcon } from "@/components/Icons";
 
 const GOJEK_GREEN = "#00AA13";
 
@@ -82,21 +83,23 @@ function CodeBox({ title, tabs, singleCode }: CodeSnippetProps) {
         <button
           type="button"
           onClick={handleCopy}
+          title={copied ? "Tersalin!" : "Salin Kode"}
+          aria-label="Salin Kode"
           style={{
             display: "inline-flex",
             alignItems: "center",
-            padding: "4px 10px",
-            borderRadius: "5px",
+            justifyContent: "center",
+            width: 28,
+            height: 28,
+            borderRadius: "6px",
             border: "1px solid #475569",
             background: copied ? "#059669" : "#334155",
             color: "#ffffff",
-            fontSize: "11px",
-            fontWeight: 600,
             cursor: "pointer",
             transition: "all 0.15s ease",
           }}
         >
-          {copied ? "Tersalin" : "Salin Kode"}
+          {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
         </button>
       </div>
       <pre

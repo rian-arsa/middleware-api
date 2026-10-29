@@ -1,6 +1,6 @@
 import { addLog, LogEntry } from "./logStore";
 import { CORS_HEADERS } from "./cors";
-import { findActiveMock } from "./mockStore";
+import { findActiveMockV2 } from "./mockStore";
 
 /**
  * Mengubah nama service dari URL ke nama env variable.
@@ -98,7 +98,7 @@ export async function proxyAndLog(
   });
 
   // ── 1b. Cek mock aktif ────────────────────────────────────────────────────
-  const activeMock = findActiveMock(req.method, service, path);
+  const activeMock = findActiveMockV2(req.method, service, path);
   if (activeMock) {
     if (activeMock.delayMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, activeMock.delayMs));
@@ -138,6 +138,8 @@ export async function proxyAndLog(
       headers: {
         ...normalizedMockHeaders,
         ...corsHeadersLower,
+        "x-mock": encodeURIComponent(activeMock.variantName),
+        "x-mock-collection": encodeURIComponent(activeMock.collectionName),
       },
     });
   }
