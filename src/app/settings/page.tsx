@@ -41,7 +41,7 @@ Content-Type: application/json
   "total": 125000
 }`;
 
-type SectionId = "tampilan" | "env" | "dokumentasi" | "pembuat";
+type SectionId = "tampilan" | "env" | "json" | "dokumentasi" | "pembuat";
 
 interface EnvItem {
   envKey: string;
@@ -79,6 +79,13 @@ function NavIcon({ id }: { id: SectionId }) {
         <rect x="2" y="13" width="20" height="8" rx="2" />
         <line x1="6" y1="7" x2="6.01" y2="7" />
         <line x1="6" y1="17" x2="6.01" y2="17" />
+      </svg>
+    );
+  if (id === "json")
+    return (
+      <svg {...p}>
+        <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1" />
+        <path d="M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1" />
       </svg>
     );
   if (id === "dokumentasi")
@@ -140,6 +147,7 @@ function LinkIcon({ id }: { id: string }) {
 const SECTIONS: { id: SectionId; title: string; desc: string }[] = [
   { id: "tampilan", title: "Tampilan", desc: "Font dan ukuran teks" },
   { id: "env", title: "Environment", desc: "Daftar URL backend" },
+  { id: "json", title: "JSON Beautifier", desc: "Rapikan, minify, validasi" },
   { id: "dokumentasi", title: "Dokumentasi", desc: "Panduan teknis dan fitur" },
   { id: "pembuat", title: "Pembuat", desc: "Kontak dan dukungan" },
 ];
@@ -392,6 +400,127 @@ function EnvSection() {
   );
 }
 
+function sortDeep(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(sortDeep);
+  if (v !== null && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    return Object.fromEntries(Object.keys(o).sort().map((k) => [k, sortDeep(o[k])]));
+  }
+  return v;
+}
+
+function JsonSection() {
+  const [input, setInput] = useState("");
+  const [output, setOutput] = useState("");
+  const [error, setError] = useState("");
+  const [indent, setIndent] = useState(2);
+  const [sort, setSort] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setExpanded(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [expanded]);
+
+  const run =  (mode: "beautify" | "minify") => {
+    if (!input.trim()) {
+      setOutput("");
+      setError("");
+      return;
+    }
+    try {
+      let v: unknown = JSON.parse(input);
+      if (sort) v = sortDeep(v);
+      setOutput(mode === "minify" ? JSON.stringify(v) : JSON.stringify(v, null, indent === 0 ? "\t" : indent));
+      setError("");
+    } catch (e) {
+      setOutput("");
+      const msg = e instanceof Error ? e.message : "JSON tidak valid";
+      setError(msg);
+    }
+  };
+
+  const btn: React.CSSProperties = { padding: "7px 14px", fontSize: 13, borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", cursor: "pointer", color: "#334155" };
+  const area: React.CSSProperties = { width: "100%", minHeight: 320, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8, fontFamily: MONO, fontSize: 12, lineHeight: 1.6, color: "#0f172a", background: "#fff", resize: "vertical" };
+
+  return (
+    <section style={card}>
+      <h2 style={h2}>JSON Beautifier</h2>
+      <p style={sub}>Tempel JSON mentah, lalu rapikan atau minify. Semua diproses di browser, tidak dikirim ke server.</p>
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
+        <button type="button" onClick={() => run("beautify")} style={{ ...btn, background: GREEN, borderColor: GREEN, color: "#fff", fontWeight: 600 }}>Rapikan</button>
+        <button type="button" onClick={() => run("minify")} style={btn}>Minify</button>
+        <label style={{ fontSize: 13, color: "#334155", display: "inline-flex", gap: 6, alignItems: "center" }}>
+          Indent
+          <select value={indent} onChange={(e) => setIndent(Number(e.target.value))} style={{ padding: "6px 8px", border: "1px solid #e2e8f0", borderRadius: 6, background: "#fff", color: "#0f172a" }}>
+            <option value={2}>2 spasi</option>
+            <option value={4}>4 spasi</option>
+            <option value={0}>Tab</option>
+          </select>
+        </label>
+        <label style={{ fontSize: 13, color: "#334155", display: "inline-flex", gap: 6, alignItems: "center", cursor: "pointer" }}>
+          <input type="checkbox" checked={sort} onChange={(e) => setSort(e.target.checked)} />
+          Urutkan key A-Z
+        </label>
+        <button type="button" onClick={() => { setInput(output || input); setOutput(""); }} style={btn} disabled={!output}>Pakai hasil sebagai input</button>
+        <button type="button" onClick={() => { setInput(""); setOutput(""); setError(""); }} style={btn}>Bersihkan</button>
+      </div>
+
+      {error && <p role="alert" style={{ fontSize: 13, color: "#991b1b", background: "#fee2e2", padding: "8px 12px", borderRadius: 8, marginBottom: 12, fontFamily: MONO }}>{error}</p>}
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
+        <div>
+          <div style={label}>Input</div>
+          <textarea value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} placeholder='{"nama":"contoh","aktif":true}' style={area} aria-label="Input JSON" />
+        </div>
+        <div>
+          <div style={{ ...label, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>Hasil</span>
+            {output && (
+              <span style={{ display: "inline-flex", gap: 6 }}>
+                <button type="button" title="Perbesar" aria-label="Perbesar hasil" onClick={() => setExpanded(true)} style={{ border: "1px solid #e2e8f0", background: "#fff", borderRadius: 6, padding: 5, cursor: "pointer", color: "#64748b", display: "inline-flex" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 3 21 3 21 9" />
+                    <polyline points="9 21 3 21 3 15" />
+                    <line x1="21" y1="3" x2="14" y2="10" />
+                    <line x1="3" y1="21" x2="10" y2="14" />
+                  </svg>
+                </button>
+                <CopyCell text={output} />
+              </span>
+            )}
+          </div>
+          <textarea value={output} readOnly spellCheck={false} placeholder="Hasil muncul di sini" style={{ ...area, background: "#f8fafc" }} aria-label="Hasil JSON" />
+        </div>
+      </div>
+
+      {expanded && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Hasil JSON diperbesar"
+          onClick={() => setExpanded(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, width: "min(1100px, 100%)", height: "min(88vh, 100%)", display: "flex", flexDirection: "column", padding: 18, color: "#0f172a" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <strong style={{ fontSize: 15 }}>Hasil JSON</strong>
+              <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+                <CopyCell text={output} />
+                <button type="button" onClick={() => setExpanded(false)} style={btn}>Tutup</button>
+              </span>
+            </div>
+            <textarea value={output} readOnly spellCheck={false} style={{ ...area, flex: 1, minHeight: 0, resize: "none", background: "#f8fafc" }} aria-label="Hasil JSON diperbesar" />
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function CreatorSection() {
   const initials = CREATOR.name
     .split(" ")
@@ -532,6 +661,7 @@ export default function SettingsPage() {
         <main style={{ flex: "1 1 520px", minWidth: 0 }}>
           {section === "tampilan" && <AppearanceSection />}
           {section === "env" && <EnvSection />}
+          {section === "json" && <JsonSection />}
           {section === "pembuat" && <CreatorSection />}
         </main>
       </div>
