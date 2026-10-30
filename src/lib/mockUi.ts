@@ -37,7 +37,7 @@ export const STATUS_PRESETS: { code: number; text: string }[] = [
   { code: 503, text: "Service Unavailable" },
 ];
 
-export const RESERVED_SERVICES = ["logs", "api", "mocks", "tester", "docs", "settings"];
+export const RESERVED_SERVICES = ["logs", "api", "mocks", "tester", "docs", "settings", "compare"];
 
 export type MockStatusKind = "on" | "off" | "passthrough";
 

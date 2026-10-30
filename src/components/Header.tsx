@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { CloseIcon } from "./Icons";
 
-export type NavTab = "logs" | "mocks" | "tester" | "docs" | "settings";
+export type NavTab = "logs" | "mocks" | "tester" | "docs" | "settings" | "compare";
 
 interface HeaderProps {
   currentTab: NavTab;
@@ -255,6 +255,42 @@ export default function Header({ currentTab, subtitle, rightSlot }: HeaderProps)
                 }}
               />
             )}
+          </Link>
+
+          {/* Compare */}
+          <Link
+            href="/compare"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "7px 16px",
+              borderRadius: "9px",
+              textDecoration: "none",
+              fontSize: "13px",
+              fontWeight: currentTab === "compare" ? 700 : 500,
+              color: currentTab === "compare" ? "#0f172a" : "#64748b",
+              background: currentTab === "compare" ? "#ffffff" : "transparent",
+              boxShadow: currentTab === "compare" ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)" : "none",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={currentTab === "compare" ? GOJEK_GREEN : "currentColor"}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="17 1 21 5 17 9"></polyline>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+              <polyline points="7 23 3 19 7 15"></polyline>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+            <span>Compare</span>
           </Link>
 
           {/* Tab 4: Settings (termasuk Dokumentasi) */}

@@ -8,7 +8,7 @@ type Params = Promise<{
 }>;
 
 // Nama service yang dilarang karena bentrok dengan route internal
-const RESERVED = ["logs", "api", "mocks", "tester", "docs", "settings"];
+const RESERVED = ["logs", "api", "mocks", "tester", "docs", "settings", "compare"];
 
 async function handler(
   req: NextRequest,
@@ -23,7 +23,11 @@ async function handler(
     );
   }
 
-  const joinedPath = "/" + path.join("/");
+  let joinedPath = "/" + path.join("/");
+  // Pertahankan trailing slash karena sebagian backend membedakan /pos dan /pos/
+  if (new URL(req.url).pathname.endsWith("/") && !joinedPath.endsWith("/")) {
+    joinedPath += "/";
+  }
   const query = req.nextUrl.search.replace(/^\?/, "");
 
   return proxyAndLog(service, joinedPath, query, req);
