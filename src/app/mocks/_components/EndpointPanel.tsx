@@ -81,7 +81,7 @@ export default function EndpointPanel({
         <CopyButton text={fullUrl} label="Copy URL" />
       </div>
       <div className={s.muted} style={{ marginTop: 4 }}>
-        Tip: gunakan <code>:id</code> untuk parameter dinamis, mis. <code>/users/:id</code>.
+        Gunakan path setelah nama service pada URL frontend, tanpa base path backend. Gunakan <code>:id</code> untuk parameter dinamis, mis. <code>/users/:id</code>.
       </div>
 
       <StatusBanner

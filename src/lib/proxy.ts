@@ -1,6 +1,7 @@
 import { addLog, LogEntry } from "./logStore";
 import { CORS_HEADERS } from "./cors";
 import { findActiveMockV2 } from "./mockStore";
+import { getServiceBaseUrl, serviceToEnvKey } from "./serviceStore";
 
 /**
  * Mengubah nama service dari URL ke nama env variable.
@@ -11,12 +12,12 @@ export function resolveTargetUrl(
   path: string,
   query: string
 ): string {
-  const envKey = service.toUpperCase().replace(/-/g, "_") + "_URL";
-  const baseUrl = process.env[envKey];
+  const envKey = serviceToEnvKey(service);
+  const baseUrl = getServiceBaseUrl(service);
 
   if (!baseUrl) {
     throw new Error(
-      `Environment variable "${envKey}" tidak ditemukan untuk service "${service}".`
+      `URL untuk service "${service}" belum diatur. Tambahkan di Settings > Environment atau definisikan "${envKey}" di .env.`
     );
   }
 
@@ -110,6 +111,7 @@ export async function proxyAndLog(
       method: req.method,
       service,
       url: `[MOCK] ${path}`,
+      requestPath: path,
       queryParams,
       requestHeaders,
       requestBody,
@@ -144,7 +146,32 @@ export async function proxyAndLog(
     });
   }
 
-  const targetUrl = resolveTargetUrl(service, path, query);
+  let targetUrl: string;
+  try {
+    targetUrl = resolveTargetUrl(service, path, query);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    addLog({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      service,
+      url: `[NO TARGET] ${path}`,
+      requestPath: path,
+      queryParams,
+      requestHeaders,
+      requestBody,
+      status: 404,
+      responseHeaders: {},
+      responseBody: `[error: ${message}]`,
+      duration: Date.now() - start,
+    });
+    // Header CORS wajib ada agar browser menampilkan pesan error asli, bukan error CORS
+    return new Response(JSON.stringify({ error: "Service Not Configured", message }), {
+      status: 404,
+      headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+    });
+  }
 
   // ── 2. Forward ke BE ──────────────────────────────────────────────────────
   let status = 500;
@@ -205,6 +232,7 @@ export async function proxyAndLog(
       method: req.method,
       service,
       url: targetUrl,
+      requestPath: path,
       queryParams,
       requestHeaders,
       requestBody,
@@ -232,6 +260,7 @@ export async function proxyAndLog(
     method: req.method,
     service,
     url: targetUrl,
+    requestPath: path,
     queryParams,
     requestHeaders,
     requestBody,

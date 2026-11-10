@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { CORS_HEADERS, corsPreflightResponse } from "@/lib/cors";
 import { getCollections } from "@/lib/mockStore";
+import { getServiceBaseUrl, serviceToEnvKey } from "@/lib/serviceStore";
 
 export function OPTIONS(): Response {
   return corsPreflightResponse();
@@ -17,8 +18,8 @@ export async function GET(
     return NextResponse.json({ error: "Collection tidak ditemukan." }, { status: 404, headers: CORS_HEADERS });
   }
 
-  const envKey = col.service.toUpperCase().replace(/-/g, "_") + "_URL";
-  const raw = process.env[envKey];
+  const envKey = serviceToEnvKey(col.service);
+  const raw = getServiceBaseUrl(col.service);
   return NextResponse.json(
     { envKey, baseUrl: raw ? raw.replace(/\/$/, "") : null },
     { headers: CORS_HEADERS }
