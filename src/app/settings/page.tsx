@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -42,12 +42,6 @@ Content-Type: application/json
 }`;
 
 type SectionId = "tampilan" | "env" | "json" | "dokumentasi" | "pembuat";
-
-interface EnvItem {
-  envKey: string;
-  service: string;
-  baseUrl: string;
-}
 
 const card: React.CSSProperties = {
   background: "#fff",
@@ -333,62 +327,163 @@ const stepBtn: React.CSSProperties = {
   cursor: "pointer",
 };
 
+interface ServiceItem {
+  service: string;
+  baseUrl: string;
+  enabled: boolean;
+  source: "ui" | "env" | "env-override";
+  envKey: string;
+  envUrl?: string;
+}
+
+const smallBtn: React.CSSProperties = { padding: "5px 10px", fontSize: 12, borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", cursor: "pointer", color: "#334155" };
+const fieldInput: React.CSSProperties = { padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, color: "#0f172a", background: "#fff", fontFamily: MONO };
+
+const SOURCE_LABEL: Record<ServiceItem["source"], string> = { ui: "Settings", env: ".env", "env-override": "Settings (menimpa .env)" };
+
 function EnvSection() {
-  const [items, setItems] = useState<EnvItem[] | null>(null);
+  const [items, setItems] = useState<ServiceItem[] | null>(null);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [editing, setEditing] = useState<{ service: string; baseUrl: string; isNew: boolean } | null>(null);
+  const [formError, setFormError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [tests, setTests] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/settings/env")
       .then((r) => r.json())
       .then((d) => !cancelled && setItems(d.items || []))
-      .catch(() => !cancelled && setError("Gagal memuat daftar env."));
+      .catch(() => !cancelled && setError("Gagal memuat daftar service."));
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const filtered = (items || []).filter((i) => (i.envKey + i.baseUrl).toLowerCase().includes(query.toLowerCase()));
-  const cell: React.CSSProperties = { padding: "10px 8px", fontFamily: MONO, fontSize: 12 };
+  const save = async (service: string, baseUrl: string, enabled = true) => {
+    setBusy(true);
+    setFormError("");
+    try {
+      const r = await fetch("/api/settings/env", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ service, baseUrl, enabled }) });
+      const d = await r.json();
+      if (!r.ok) {
+        setFormError(d.error || "Gagal menyimpan.");
+        return false;
+      }
+      setItems(d.items);
+      return true;
+    } catch {
+      setFormError("Gagal menyimpan.");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (service: string) => {
+    const r = await fetch(`/api/settings/env?service=${encodeURIComponent(service)}`, { method: "DELETE" });
+    const d = await r.json();
+    setItems(d.items);
+  };
+
+  const test = async (service: string, baseUrl: string) => {
+    setTests((t) => ({ ...t, [service]: "Menguji..." }));
+    try {
+      const r = await fetch("/api/settings/env", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ baseUrl }) });
+      const d = await r.json();
+      const msg = d.ok ? `Terhubung, status ${d.status} (${d.ms} ms)` : `Gagal: ${d.error}`;
+      setTests((t) => ({ ...t, [service]: msg }));
+    } catch {
+      setTests((t) => ({ ...t, [service]: "Gagal menguji" }));
+    }
+  };
+
+  const filtered = (items || []).filter((i) => (i.service + i.baseUrl).toLowerCase().includes(query.toLowerCase()));
+  const cell: React.CSSProperties = { padding: "10px 8px", fontFamily: MONO, fontSize: 12, verticalAlign: "top" };
 
   return (
     <section style={card}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 4 }}>
         <h2 style={h2}>Environment URL</h2>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cari env atau URL"
-          style={{ padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, color: "#0f172a", background: "#fff", minWidth: 220 }}
-        />
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari service atau URL"
+            style={{ padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, color: "#0f172a", background: "#fff", minWidth: 200 }}
+          />
+          <button type="button" onClick={() => { setEditing({ service: "", baseUrl: "", isNew: true }); setFormError(""); }} style={{ ...smallBtn, background: GREEN, borderColor: GREEN, color: "#fff", fontWeight: 600, padding: "8px 14px", fontSize: 13 }}>
+            Tambah service
+          </button>
+        </div>
       </div>
       <p style={sub}>
-        Variabel <code>*_URL</code> dari file <code>.env</code> yang dipakai sebagai backend tiap service. Kredensial dan query
-        string disembunyikan. Untuk mengubah nilainya, edit <code>.env</code> lalu restart server.
+        URL backend untuk tiap service. Perubahan dari sini langsung berlaku tanpa restart dan disimpan di <code>services.json</code>. Service dari
+        <code> .env</code> (<code>*_URL</code>) tetap terbaca, dan jika nama sama maka nilai dari Settings yang dipakai. Kredensial di URL tidak ditampilkan.
       </p>
+
+      {editing && (
+        <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 14, marginBottom: 16, background: "#f8fafc" }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <label style={{ flex: "1 1 160px", fontSize: 12, fontWeight: 600, color: "#475569", display: "flex", flexDirection: "column", gap: 4 }}>
+              Nama service (path)
+              <input value={editing.service} disabled={!editing.isNew} onChange={(e) => setEditing({ ...editing, service: e.target.value.toLowerCase() })} placeholder="mis. kong" style={fieldInput} aria-label="Nama service" />
+            </label>
+            <label style={{ flex: "3 1 280px", fontSize: 12, fontWeight: 600, color: "#475569", display: "flex", flexDirection: "column", gap: 4 }}>
+              URL backend
+              <input value={editing.baseUrl} onChange={(e) => setEditing({ ...editing, baseUrl: e.target.value })} placeholder="https://api.example.com" style={fieldInput} aria-label="URL backend" />
+            </label>
+          </div>
+          {editing.service && <p style={{ fontSize: 12, color: "#64748b", margin: "8px 0 0" }}>Request ke <code>/{editing.service}/...</code> akan diteruskan ke URL ini.</p>}
+          {formError && <p role="alert" style={{ fontSize: 13, color: "#991b1b", margin: "8px 0 0" }}>{formError}</p>}
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <button type="button" disabled={busy} onClick={async () => { if (await save(editing.service.trim(), editing.baseUrl.trim())) setEditing(null); }} style={{ ...smallBtn, background: GREEN, borderColor: GREEN, color: "#fff", fontWeight: 600 }}>Simpan</button>
+            <button type="button" onClick={() => setEditing(null)} style={smallBtn}>Batal</button>
+          </div>
+        </div>
+      )}
+
       {error && <p style={{ color: "#b91c1c", fontSize: 13 }}>{error}</p>}
       {!items && !error && <p style={{ fontSize: 13, color: "#64748b" }}>Memuat...</p>}
-      {items && filtered.length === 0 && <p style={{ fontSize: 13, color: "#64748b" }}>{items.length === 0 ? "Belum ada env *_URL." : "Tidak ada hasil."}</p>}
+      {items && filtered.length === 0 && <p style={{ fontSize: 13, color: "#64748b" }}>{items.length === 0 ? "Belum ada service. Klik Tambah service." : "Tidak ada hasil."}</p>}
       {filtered.length > 0 && (
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr style={{ textAlign: "left", color: "#64748b", borderBottom: "1px solid #e5e7eb" }}>
-                <th style={{ padding: "8px" }}>Env</th>
-                <th style={{ padding: "8px" }}>Path service</th>
+                <th style={{ padding: "8px" }}>Service</th>
                 <th style={{ padding: "8px" }}>URL backend</th>
-                <th style={{ padding: "8px", width: 40 }} />
+                <th style={{ padding: "8px" }}>Sumber</th>
+                <th style={{ padding: "8px" }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((i) => (
-                <tr key={i.envKey} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ ...cell, fontWeight: 600 }}>{i.envKey}</td>
-                  <td style={{ ...cell, color: "#475569" }}>/{i.service}/...</td>
-                  <td style={{ ...cell, wordBreak: "break-all" }}>{i.baseUrl}</td>
+                <tr key={i.service} style={{ borderBottom: "1px solid #f1f5f9", opacity: i.enabled ? 1 : 0.55 }}>
+                  <td style={{ ...cell, fontWeight: 600 }}>
+                    /{i.service}/...
+                    {!i.enabled && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "#64748b" }}>OFF</span>}
+                  </td>
+                  <td style={{ ...cell, wordBreak: "break-all" }}>
+                    {i.baseUrl}
+                    {tests[i.service] && <div style={{ fontFamily: "inherit", fontSize: 11, color: tests[i.service].startsWith("Terhubung") ? "#166534" : "#64748b", marginTop: 4 }}>{tests[i.service]}</div>}
+                  </td>
+                  <td style={{ ...cell, color: "#64748b" }}>{SOURCE_LABEL[i.source]}</td>
                   <td style={{ padding: "8px" }}>
-                    <CopyCell text={i.baseUrl} />
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                      <CopyCell text={i.baseUrl} />
+                      <button type="button" style={smallBtn} onClick={() => test(i.service, i.baseUrl)}>Tes</button>
+                      <button type="button" style={smallBtn} onClick={() => { setEditing({ service: i.service, baseUrl: i.baseUrl, isNew: i.source === "env" }); setFormError(""); }}>
+                        {i.source === "env" ? "Timpa" : "Ubah"}
+                      </button>
+                      {i.source !== "env" && (
+                        <>
+                          <button type="button" style={smallBtn} onClick={() => save(i.service, i.baseUrl, !i.enabled)}>{i.enabled ? "Nonaktifkan" : "Aktifkan"}</button>
+                          <button type="button" style={{ ...smallBtn, color: "#b91c1c" }} onClick={() => remove(i.service)}>Hapus</button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

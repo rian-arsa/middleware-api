@@ -4,6 +4,7 @@ export interface LogEntry {
   method: string;
   service: string;
   url: string;
+  requestPath?: string;
   queryParams: Record<string, string>;
   requestHeaders: Record<string, string>;
   requestBody: string | null;

@@ -616,6 +616,7 @@ AUTH_URL=https://auth.internal.id`}
               </h3>
               <ul style={{ fontSize: "13px", color: "#475569", lineHeight: 1.8, paddingLeft: "20px", marginBottom: "16px" }}>
                 <li>URL mock adalah <code>http://localhost:4000/&#123;service&#125;&#123;path&#125;</code>. Prefix service tidak perlu ditulis lagi di path endpoint.</li>
+                <li>Path mock mengikuti request frontend, bukan base URL backend. Contohnya, jika base URL backend <code>https://api.example.com/pos-b2b/api/v1</code> dan frontend memanggil <code>/pos-b2b/profile</code>, gunakan path mock <code>/profile</code>. Mock lama yang tersimpan dengan path <code>/api/v1/profile</code> perlu diubah secara manual agar tidak mengubah endpoint lain yang memang menggunakan path tersebut.</li>
                 <li><strong>Path parameter:</strong> gunakan <code>:id</code>, contoh <code>/users/:id</code> cocok dengan <code>/users/42</code>.</li>
                 <li>Mock hanya aktif bila collection, endpoint, dan response aktif sama-sama menyala. Jika endpoint tidak punya response aktif, request diteruskan ke backend asli.</li>
                 <li>Response mock membawa header <code>x-mock</code> dan <code>x-mock-collection</code>, serta ditandai MOCK di <code>/logs</code>.</li>

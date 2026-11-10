@@ -1,28 +1,39 @@
 import { connection, NextResponse } from "next/server";
-
-
-// Sembunyikan kredensial (user:pass@) dan query string agar aman ditampilkan.
-function sanitizeUrl(raw: string): string {
-  try {
-    const u = new URL(raw);
-    u.username = "";
-    u.password = "";
-    u.search = "";
-    return u.toString().replace(/\/$/, "");
-  } catch {
-    return raw.replace(/\/\/[^/@]*@/, "//");
-  }
-}
+import { listServices, removeService, upsertService, validateService } from "@/lib/serviceStore";
 
 export async function GET() {
   await connection();
-  const items = Object.keys(process.env)
-    .filter((k) => /^[A-Z][A-Z0-9_]*_URL$/.test(k) && !k.startsWith("NEXT_") && process.env[k])
-    .sort()
-    .map((envKey) => ({
-      envKey,
-      service: envKey.slice(0, -4).toLowerCase().replace(/_/g, "-"),
-      baseUrl: sanitizeUrl(process.env[envKey] as string),
-    }));
-  return NextResponse.json({ items });
+  return NextResponse.json({ items: listServices() });
 }
+
+export async function PUT(req: Request) {
+  const body = await req.json().catch(() => null);
+  const service = String(body?.service ?? "").trim().toLowerCase();
+  const baseUrl = String(body?.baseUrl ?? "").trim();
+  const err = validateService(service, baseUrl);
+  if (err) return NextResponse.json({ error: err }, { status: 400 });
+  upsertService({ service, baseUrl, enabled: body?.enabled !== false });
+  return NextResponse.json({ items: listServices() });
+}
+
+export async function DELETE(req: Request) {
+  const service = new URL(req.url).searchParams.get("service") ?? "";
+  removeService(service);
+  return NextResponse.json({ items: listServices() });
+}
+
+// Tes koneksi ke base URL tanpa mengikuti redirect
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => null);
+  const baseUrl = String(body?.baseUrl ?? "").trim();
+  const err = validateService("tes", baseUrl);
+  if (err) return NextResponse.json({ error: err }, { status: 400 });
+  const started = Date.now();
+  try {
+    const res = await fetch(baseUrl, { method: "GET", redirect: "manual", signal: AbortSignal.timeout(6000) });
+    return NextResponse.json({ ok: true, status: res.status, ms: Date.now() - started });
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "Gagal terhubung", ms: Date.now() - started });
+  }
+}
+

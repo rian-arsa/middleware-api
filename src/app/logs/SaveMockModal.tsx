@@ -8,6 +8,7 @@ import s from "./SaveMockModal.module.css";
 export interface SaveMockLog {
   id: string;
   url: string;
+  requestPath?: string;
   method: string;
   status: number;
   service: string;
@@ -99,7 +100,7 @@ export default function SaveMockModal({
   const [cols, setCols] = useState<MockCollection[] | null>(null);
   const [colId, setColId] = useState(NEW_COL);
   const [folderId, setFolderId] = useState(NEW_FOLDER);
-  const [path, setPath] = useState(() => pathFromUrl(log.url, log.service));
+  const [path, setPath] = useState(() => log.requestPath ?? pathFromUrl(log.url, log.service));
   const [endpointName, setEndpointName] = useState("");
   const [variantName, setVariantName] = useState(`Response ${log.status}`);
   const [makeActive, setMakeActive] = useState(true);
@@ -301,7 +302,7 @@ export default function SaveMockModal({
               <div className={s.field}>
                 <label htmlFor="sm-path">Path</label>
                 <input id="sm-path" className={`${s.input} ${s.mono}`} value={path} onChange={(e) => setPath(e.target.value)} />
-                <span className={s.hint}>Ganti bagian yang berubah dengan <code>:id</code>, contoh <code>/users/:id</code>.</span>
+                <span className={s.hint}>Gunakan path setelah nama service pada URL frontend, tanpa base path backend. Ganti bagian yang berubah dengan <code>:id</code>, contoh <code>/users/:id</code>.</span>
               </div>
               {existing ? (
                 <div className={`${s.notice} ${s.noticeInfo}`}>

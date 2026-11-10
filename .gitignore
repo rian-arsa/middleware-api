@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 mocks.json
+
+# service URLs managed from Settings
+services.json
